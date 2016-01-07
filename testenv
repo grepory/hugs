@@ -1,0 +1,9 @@
+HUGS_HOST=:9094
+HUGS_POSTGRES_CONN=postgres://postgres:postgres@postgres:5432/hugs_test?sslmode=disable
+HUGS_SQS_URL=https://sqs.us-west-2.amazonaws.com/933693344490/CheckNotifications
+HUGS_AWS_REGION=us-east-1
+HUGS_OPSEE_HOST=https://app.opsee.com/
+HUGS_TEST=yeahbuddy
+HUGS_MANDRILL_API_KEY=rXNX2LtDlHJZdfEWywTGLA
+HUGS_MAX_WORKERS=100
+HUGS_MIN_WOKERS=50

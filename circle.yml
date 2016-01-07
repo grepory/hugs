@@ -1,0 +1,24 @@
+machine:
+  services:
+    - docker
+  environment:
+    ci: "true"
+dependencies:
+  cache_directories: []
+  override:
+    - docker info
+    - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io
+    - docker pull quay.io/opsee/build-go:go15
+    - sudo pip install --upgrade docker-compose==1.5.2 && docker-compose up -d
+test:
+  override:
+    - APPENV=testenv make docker
+    - docker tag quay.io/opsee/hugs quay.io/opsee/hugs:$CIRCLE_SHA1
+    - docker push quay.io/opsee/hugs:$CIRCLE_SHA1
+deployment:
+  production:
+    branch: master
+    owner: opsee
+    commands:
+      - docker tag -f quay.io/opsee/hugs:$CIRCLE_SHA1 quay.io/opsee/hugs:latest
+      - docker push quay.io/opsee/hugs:latest
