@@ -11,7 +11,7 @@ func main() {
 
 	go func() {
 		logrus.Info("Starting SQS Consumer with ", config.GetConfig().MinWorkers, " workers (", config.GetConfig().MaxWorkers, " max).")
-		foreman := sqsconsumer.NewForeman(10, 10, config.GetConfig().MaxWorkers, config.GetConfig().MinWorkers, config.GetConfig().SqsUrl, config.GetConfig().PostgresConn)
+		foreman := sqsconsumer.NewForeman(120, 10, config.GetConfig().MaxWorkers, config.GetConfig().MinWorkers, config.GetConfig().SqsUrl, config.GetConfig().PostgresConn)
 		foreman.Start()
 	}()
 
