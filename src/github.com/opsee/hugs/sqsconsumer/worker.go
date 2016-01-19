@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"sync/atomic"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/store"
-	"github.com/sirupsen/logrus"
 )
 
 type Worker struct {

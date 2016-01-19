@@ -1,5 +1,4 @@
 package slack
-
 var NewCustomer = `{
   "text": "*NEW CUSTOMER*",
   "username": "CustomerBot",

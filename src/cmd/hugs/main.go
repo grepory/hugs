@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/service"
 	"github.com/opsee/hugs/sqsconsumer"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {

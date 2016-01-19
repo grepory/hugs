@@ -1,5 +1,4 @@
 package slack
-
 var LaunchError = `{
   "text": "*BASTION LAUNCH ERROR*",
   "username": "ErrorBot",
