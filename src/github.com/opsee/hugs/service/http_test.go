@@ -15,7 +15,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
-	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/store"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +27,7 @@ func GetUserAuthToken(user *com.User) string {
 }
 
 type ServiceTest struct {
-	Service       *service
+	Service       *Service
 	Router        *tp.Router
 	Notifications []*store.Notification
 	User          *com.User
@@ -58,7 +57,11 @@ func NewServiceTest() *ServiceTest {
 	if err != nil {
 		logrus.Warn("Warning: Couldn't clear local test store of notifications")
 	}
-	service := NewService(db, &config.Config{PublicHost: "http://localhost:8080"})
+
+	service, err := NewService()
+	if err != nil {
+		logrus.Fatal("Failed to create service: ", err)
+	}
 
 	serviceTest := &ServiceTest{
 		Service:   service,

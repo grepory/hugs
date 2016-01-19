@@ -1,4 +1,4 @@
-HUGS_HOST=:9094
+HUGS_HOST=http://localhost:9094
 HUGS_POSTGRES_CONN=postgres://postgres:postgres@postgres:5432/hugs_test?sslmode=disable
 HUGS_SQS_URL=https://sqs.us-west-2.amazonaws.com/933693344490/CheckNotifications
 HUGS_AWS_REGION=us-east-1
