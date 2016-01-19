@@ -3,6 +3,7 @@ package sqsconsumer
 import (
 	"encoding/json"
 	"sync/atomic"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -13,11 +14,13 @@ import (
 )
 
 type Worker struct {
-	Site        *Site
-	SQS         *sqs.SQS
-	Store       *store.Postgres
-	Notifier    *notifier.Notifier
-	CommandChan chan ForemanCommand
+	Site              *Site
+	SQS               *sqs.SQS
+	Store             *store.Postgres
+	Notifier          *notifier.Notifier
+	CommandChan       chan ForemanCommand
+	errCount          int
+	errCountThreshold int
 }
 
 func NewWorker(site *Site) *Worker {
@@ -26,11 +29,13 @@ func NewWorker(site *Site) *Worker {
 		logrus.Fatal("Unable to connect to postgres! ", err)
 	}
 	return &Worker{
-		Site:        site,
-		SQS:         sqs.New(config.GetConfig().AWSSession),
-		Store:       s,
-		Notifier:    notifier.NewNotifier(),
-		CommandChan: make(chan ForemanCommand),
+		Site:              site,
+		SQS:               sqs.New(config.GetConfig().AWSSession),
+		Store:             s,
+		Notifier:          notifier.NewNotifier(),
+		CommandChan:       make(chan ForemanCommand),
+		errCount:          0,
+		errCountThreshold: 13,
 	}
 }
 
@@ -62,8 +67,13 @@ func (w *Worker) Work() {
 
 	if err != nil {
 		logrus.Error(err)
-		w.Stop()
+		if w.errCount >= w.errCountThreshold {
+			w.Stop()
+		}
+		time.Sleep((1 << uint(w.errCount+1)) * time.Millisecond * 10)
+		return
 	}
+	w.errCount = 0
 
 	// unmarshal sqs message json into events
 	for _, message := range message.Messages {
