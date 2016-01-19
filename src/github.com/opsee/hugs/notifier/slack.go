@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/hoisie/mustache"
 	"github.com/opsee/hugs/store"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
+	"github.com/sirupsen/logrus"
 )
 
 type SlackSender struct {

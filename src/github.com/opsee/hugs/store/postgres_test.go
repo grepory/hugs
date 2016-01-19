@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/opsee/basic/com"
+	"github.com/sirupsen/logrus"
 )
 
 type StoreTest struct {

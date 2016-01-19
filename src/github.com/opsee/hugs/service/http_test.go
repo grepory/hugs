@@ -12,10 +12,10 @@ import (
 
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/store"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
