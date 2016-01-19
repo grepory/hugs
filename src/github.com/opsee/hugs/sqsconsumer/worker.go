@@ -66,6 +66,7 @@ func (w *Worker) Work() {
 	message, err := w.SQS.ReceiveMessage(input)
 
 	if err != nil {
+		w.errCount += 1
 		logrus.Error(err)
 		if w.errCount >= w.errCountThreshold {
 			w.Stop()
