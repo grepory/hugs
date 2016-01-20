@@ -55,13 +55,14 @@ func NewConfig() *Config {
 		maxWorkersEnv, err1 := strconv.ParseInt(maxWorkersString, 10, 32)
 		minWorkersEnv, err2 := strconv.ParseInt(minWorkersString, 10, 32)
 		if err1 == nil && err2 == nil {
-			if minWorkers > 0 && maxWorkers > minWorkers {
+			if minWorkersEnv > 0 && maxWorkersEnv > minWorkersEnv {
 				maxWorkers = maxWorkersEnv
 				minWorkers = minWorkersEnv
 			}
+		} else {
+			logrus.Warn("Errors getting HUGS_MAX_WORKERS and HUGS_MIN_WORKERS: ", err1, " ", err2)
 		}
-	}
-	if maxWorkers == defaultMaxWorkers && minWorkers == defaultMinWorkers {
+	} else {
 		logrus.Warn("Config: using default value for MaxWorkers and MinWorkers")
 	}
 
