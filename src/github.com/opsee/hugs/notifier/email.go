@@ -37,9 +37,9 @@ func (es EmailSender) Send(n *store.Notification, e Event) error {
 	return err
 }
 
-func NewEmailSender(host string, mandrillKey string) EmailSender {
-	return EmailSender{
+func NewEmailSender(host string, mandrillKey string) (*EmailSender, error) {
+	return &EmailSender{
 		opseeHost:  host,
 		mailClient: mandrill.ClientWithKey(mandrillKey),
-	}
+	}, nil
 }

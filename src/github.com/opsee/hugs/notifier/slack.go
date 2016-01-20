@@ -8,7 +8,6 @@ import (
 	"github.com/hoisie/mustache"
 	"github.com/opsee/hugs/store"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
-	"github.com/sirupsen/logrus"
 )
 
 type SlackSender struct {
@@ -17,7 +16,6 @@ type SlackSender struct {
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
 func (this SlackSender) Send(n *store.Notification, e Event) error {
-	logrus.Info("Notifier: Requested slack notification.")
 
 	templateKey := "check-passing"
 	if e.FailCount > 0 {
@@ -48,17 +46,17 @@ func (this SlackSender) Send(n *store.Notification, e Event) error {
 	return nil
 }
 
-func NewSlackSender() SlackSender {
+func NewSlackSender() (*SlackSender, error) {
 	// initialize check failing template
 	failTemplate, err := mustache.ParseString(slacktmpl.CheckFailing)
 	if err != nil {
-		logrus.Warn("Notifier: Failed to get check failing template.")
+		return nil, err
 	}
 
 	// initialize check passing template
 	passTemplate, err := mustache.ParseString(slacktmpl.CheckPassing)
 	if err != nil {
-		logrus.Warn("Notifier: Failed to get check passing template.")
+		return nil, err
 	}
 
 	templateMap := map[string]*mustache.Template{
@@ -66,7 +64,7 @@ func NewSlackSender() SlackSender {
 		"check-passing": passTemplate,
 	}
 
-	return SlackSender{
+	return &SlackSender{
 		templates: templateMap,
-	}
+	}, nil
 }

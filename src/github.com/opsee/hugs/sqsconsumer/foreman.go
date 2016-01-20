@@ -3,6 +3,7 @@ package sqsconsumer
 import (
 	"math"
 	"strconv"
+	"sync"
 	"time"
 
 	"sync/atomic"
@@ -35,7 +36,6 @@ func (site *Site) GetJobsRemaining() (int, error) {
 		return -1, err
 	}
 	messagesString := aws.StringValue(out.Attributes["ApproximateNumberOfMessages"])
-	logrus.WithFields(logrus.Fields{"Event": "GetJobsRemaining"}).Info("Approximately ", messagesString, " messages remaining in the queue")
 
 	count, err := strconv.Atoi(messagesString)
 	if err != nil {
@@ -53,6 +53,7 @@ const (
 
 // Foreman manages # and behavior of workers at Site
 type Foreman struct {
+	ID                    int64
 	Site                  *Site
 	CurrentWorkerCount    int64
 	TargetWorkerCount     int64
@@ -64,7 +65,7 @@ type Foreman struct {
 	CommandChan           chan ForemanCommand
 }
 
-func NewForeman(updateFreqSec int, optimalWorkEstimate int64, maxWorkers int64, minWorkers int64, sqsURL string, dbURL string) *Foreman {
+func NewForeman(ID int64, updateFreqSec int, optimalWorkEstimate int64, maxWorkers int64, minWorkers int64, sqsURL string, dbURL string) *Foreman {
 	sqs := sqs.New(config.GetConfig().AWSSession)
 	foreman := &Foreman{
 		Site: &Site{
@@ -117,19 +118,19 @@ func (foreman *Foreman) ComputeWorkerTarget(load int64) int64 {
 func (foreman *Foreman) EstimateWork() {
 	count, err := foreman.Site.GetJobsRemaining()
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"Event": "EstimateWork", "Error": err}).Warn("Couldn't get SQS Queue Attributes")
+		logrus.WithFields(logrus.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes.")
 	}
 	count = foreman.safeWorkEstimate(count)
 	sma := foreman.computeJobCountSMA(count)
 	foreman.TargetWorkerCount = foreman.ComputeWorkerTarget(int64(sma))
-	logrus.Info("Foreman: Load SMA: ", sma, ". Currently ", foreman.CurrentWorkerCount, " workers. Target is ", foreman.TargetWorkerCount, " workers.")
+	logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Info("Foreman: Load SMA: ", sma, ". Currently ", foreman.CurrentWorkerCount, " workers. Target is ", foreman.TargetWorkerCount, " workers.")
 }
 
 // Initialize sma for past n estimates to current estimated work
 func (foreman *Foreman) initWorkEstimateHistory() {
 	count, err := foreman.Site.GetJobsRemaining()
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"Event": "EstimateWork", "Error": err}).Warn("Couldn't get SQS Queue Attributes")
+		logrus.WithFields(logrus.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes")
 	}
 	count = foreman.safeWorkEstimate(count)
 	for i := 0; i < len(foreman.PreviousWorkEstimates); i++ {
@@ -147,7 +148,7 @@ func (foreman *Foreman) AdjustWorkerCount() {
 			if foreman.CurrentWorkerCount < foreman.MaxWorkerCount {
 				foreman.recruitWorker()
 			} else {
-				logrus.Warn("Foreman: Hit worker ceiling.")
+				logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Warn("Hit worker ceiling.")
 				break
 			}
 		}
@@ -157,7 +158,7 @@ func (foreman *Foreman) AdjustWorkerCount() {
 			if foreman.CurrentWorkerCount > foreman.MinWorkerCount {
 				foreman.discardWorker()
 			} else {
-				logrus.Warn("Foreman: Hit worker floor.")
+				logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Warn("Hit worker floor.")
 				break
 			}
 		}
@@ -185,12 +186,14 @@ func (foreman *Foreman) discardWorker() {
 	go func() {
 		foreman.CommandChan <- Quit
 	}()
-	//TODO(dan) this should be done in the go func and threadsafe
 }
 
 // Get a new worker
 func (foreman *Foreman) recruitWorker() {
-	worker := NewWorker(foreman.Site)
+	worker, err := NewWorker(foreman.Site)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't recruit new worker!")
+	}
 	worker.Start()
 }
 
@@ -200,6 +203,7 @@ func (foreman *Foreman) issueCommands() {
 		select {
 		case command := <-foreman.CommandChan:
 			go func() {
+				// get an available worker and issue it a command.
 				workerChan := <-foreman.Site.WorkerPool
 				workerChan <- command
 			}()
@@ -215,28 +219,31 @@ func (foreman *Foreman) Start() {
 
 	for {
 		ta := time.Now()
-		logrus.Info("Foreman: Start cycle @", ta)
 		foreman.EstimateWork()
 		foreman.AdjustWorkerCount()
 		elapsed := time.Since(ta)
 
 		wait := time.Duration(foreman.UpdateFreqSec)*time.Second - elapsed
-
 		if wait < time.Duration(0)*time.Second {
-			logrus.WithFields(logrus.Fields{"Event": "Foreman Wait"}).Warn("Foreman couldn't finish tasks in allotted time!")
+			logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Warn("Couldn't finish tasks in allotted time!")
 			continue
 		}
 
 		time.Sleep(wait) // wait the rest of the minute
-		logrus.Info("Foreman: Finished cycle @", time.Now())
+		logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Info("Finished cycle @", time.Now())
 	}
 }
 
 func (foreman *Foreman) InitWorkers() {
-	// starting n number of workers
+	// starting n number of workers, then wait.
 	var i int64
+	wg := sync.WaitGroup{}
 	for i = 0; i < foreman.CurrentWorkerCount; i++ {
-		worker := NewWorker(foreman.Site)
-		worker.Start()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			foreman.recruitWorker()
+		}()
 	}
+	wg.Wait()
 }

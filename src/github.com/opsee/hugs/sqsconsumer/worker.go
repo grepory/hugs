@@ -14,6 +14,7 @@ import (
 )
 
 type Worker struct {
+	ID                int64
 	Site              *Site
 	SQS               *sqs.SQS
 	Store             *store.Postgres
@@ -23,31 +24,42 @@ type Worker struct {
 	errCountThreshold int
 }
 
-func NewWorker(site *Site) *Worker {
+func NewWorker(site *Site) (*Worker, error) {
 	s, err := store.NewPostgres(site.DBUrl)
 	if err != nil {
-		logrus.Fatal("Unable to connect to postgres! ", err)
+		return nil, err
 	}
+
+	// create new notifier and warn on errors
+	notifier, errMap := notifier.NewNotifier()
+	for k, v := range errMap {
+		if v != nil {
+			logrus.WithFields(logrus.Fields{"worker": "initializing", "error": v}).Info("Couldn't initialize notifier: ", k)
+		}
+	}
+
 	return &Worker{
+		ID:                -1,
 		Site:              site,
 		SQS:               sqs.New(config.GetConfig().AWSSession),
 		Store:             s,
-		Notifier:          notifier.NewNotifier(),
+		Notifier:          notifier,
 		CommandChan:       make(chan ForemanCommand),
 		errCount:          0,
-		errCountThreshold: 13,
-	}
+		errCountThreshold: 12,
+	}, nil
 }
 
 func (w *Worker) Start() {
 	go func() {
 		w.Site.WorkerPool <- w.CommandChan
 		atomic.AddInt64(w.Site.CurrentWorkerCount, 1)
+		w.ID = atomic.LoadInt64(w.Site.CurrentWorkerCount)
 		for {
 			select {
 			case command := <-w.CommandChan:
 				if command == Quit {
-					logrus.Info("Stopping worker")
+					logrus.WithFields(logrus.Fields{"worker": w.ID}).Info("Quitting.")
 					atomic.AddInt64(w.Site.CurrentWorkerCount, -1)
 					return
 				}
@@ -70,7 +82,9 @@ func (w *Worker) Work() {
 		logrus.Error(err)
 		if w.errCount >= w.errCountThreshold {
 			w.Stop()
+			return
 		}
+		logrus.WithFields(logrus.Fields{"worker": w.ID, "err": err}).Warn("Encountered error.  Sleeping...")
 		time.Sleep((1 << uint(w.errCount+1)) * time.Millisecond * 10)
 		return
 	}
@@ -97,12 +111,12 @@ func (w *Worker) Work() {
 					// Send notification with Notifier
 					sendErr := w.Notifier.Send(notification, event)
 					if sendErr != nil {
-						logrus.WithFields(logrus.Fields{"Error": sendErr}).Error("Error emitting notification")
+						logrus.WithFields(logrus.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
 					}
 				}
 			}
 		} else {
-			logrus.Warn("Worker: event failed validation.")
+			logrus.WithFields(logrus.Fields{"worker": w.ID}).Warn("Worker: event failed validation.")
 		}
 	}
 }

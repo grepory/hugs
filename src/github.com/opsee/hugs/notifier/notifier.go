@@ -18,16 +18,29 @@ type Notifier struct {
 	Senders map[string]Sender
 }
 
-// A collection of Senders, utilized by Workers to send notifications
-func NewNotifier() *Notifier {
+// A collection of Senders, utilized by Workers to send notifications, return map of sender initialization errors to Warn on
+func NewNotifier() (*Notifier, map[string]error) {
+	errMap := make(map[string]error)
 	notifier := &Notifier{
 		Senders: map[string]Sender{},
 	}
 
-	// add all of our sender types, the keys correspond to the Type field in store.Notification
-	notifier.addSender("email", NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey))
-	notifier.addSender("slack", NewSlackSender())
-	return notifier
+	// try add slack sender
+	slackSender, err := NewSlackSender()
+	if err != nil {
+		errMap["slack"] = err
+	} else {
+		notifier.addSender("slack", slackSender)
+	}
+
+	// try add email sender
+	emailSender, err := NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey)
+	if err != nil {
+		errMap["email"] = err
+	} else {
+		notifier.addSender("email", emailSender)
+	}
+	return notifier, errMap
 }
 
 func (n Notifier) addSender(key string, sender Sender) {

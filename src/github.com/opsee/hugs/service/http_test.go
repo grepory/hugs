@@ -20,10 +20,22 @@ import (
 )
 
 func GetUserAuthToken(user *com.User) string {
-	userstring := fmt.Sprintf(`{"id": %d, "customer_id": "%s", "email": "%s", "verified": %t, "admin": %t, "active": %t}`, user.ID, user.CustomerID, user.Email, user.Verified, user.Admin, user.Active)
-	logrus.Info(userstring)
+	userstring := fmt.Sprintf(`{"id": %d, "customer_id": "%s", "user_id": "%s", "email": "%s", "verified": %t, "admin": %t, "active": %t}`, user.ID, user.CustomerID, user.ID, user.Email, user.Verified, user.Admin, user.Active)
 	token := base64.StdEncoding.EncodeToString([]byte(userstring))
 	return fmt.Sprintf("Basic %s", token)
+}
+
+func fuckitTest() {
+	user := &com.User{
+		ID:         13,
+		CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+		Email:      "dan@opsee.com",
+		Name:       "Dan",
+		Verified:   true,
+		Admin:      true,
+		Active:     true,
+	}
+	logrus.Info(GetUserAuthToken(user))
 }
 
 type ServiceTest struct {
@@ -35,12 +47,6 @@ type ServiceTest struct {
 }
 
 func NewServiceTest() *ServiceTest {
-	logrus.Info("Connecting to local test store")
-	db, err := store.NewPostgres(os.Getenv("HUGS_POSTGRES_CONN"))
-	if err != nil {
-		panic(err)
-	}
-
 	user := &com.User{
 		ID:         13,
 		CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
@@ -50,9 +56,17 @@ func NewServiceTest() *ServiceTest {
 		Admin:      true,
 		Active:     true,
 	}
+	userAuthToken := GetUserAuthToken(user)
 
-	logrus.Info("Clearing local test store of notifications")
-	err = db.DeleteNotificationsByUser(user)
+	logrus.Info(userAuthToken)
+	logrus.Info("Connecting to local test store")
+	db, err := store.NewPostgres(os.Getenv("HUGS_POSTGRES_CONN"))
+	if err != nil {
+		panic(err)
+	}
+	logrus.Info(db)
+	//logrus.Info("Clearing local test store of notifications")
+	//err = db.DeleteNotificationsByUser(user)
 
 	if err != nil {
 		logrus.Warn("Warning: Couldn't clear local test store of notifications")
@@ -67,7 +81,7 @@ func NewServiceTest() *ServiceTest {
 		Service:   service,
 		Router:    service.NewRouter(),
 		User:      user,
-		UserToken: GetUserAuthToken(user),
+		UserToken: userAuthToken,
 		Notifications: []*store.Notification{
 			&store.Notification{
 				ID:         0,
