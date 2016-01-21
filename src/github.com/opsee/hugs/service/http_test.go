@@ -15,7 +15,7 @@ import (
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/store"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,7 +35,7 @@ func fuckitTest() {
 		Admin:      true,
 		Active:     true,
 	}
-	logrus.Info(GetUserAuthToken(user))
+	log.Info(GetUserAuthToken(user))
 }
 
 type ServiceTest struct {
@@ -58,23 +58,23 @@ func NewServiceTest() *ServiceTest {
 	}
 	userAuthToken := GetUserAuthToken(user)
 
-	logrus.Info(userAuthToken)
-	logrus.Info("Connecting to local test store")
+	log.Info(userAuthToken)
+	log.Info("Connecting to local test store")
 	db, err := store.NewPostgres(os.Getenv("HUGS_POSTGRES_CONN"))
 	if err != nil {
 		panic(err)
 	}
-	logrus.Info(db)
-	//logrus.Info("Clearing local test store of notifications")
+	log.Info(db)
+	//log.Info("Clearing local test store of notifications")
 	//err = db.DeleteNotificationsByUser(user)
 
 	if err != nil {
-		logrus.Warn("Warning: Couldn't clear local test store of notifications")
+		log.Warn("Warning: Couldn't clear local test store of notifications")
 	}
 
 	service, err := NewService()
 	if err != nil {
-		logrus.Fatal("Failed to create service: ", err)
+		log.Fatal("Failed to create service: ", err)
 	}
 
 	serviceTest := &ServiceTest{
@@ -89,7 +89,7 @@ func NewServiceTest() *ServiceTest {
 				UserID:     13,
 				CheckID:    "00000",
 				Value:      "off",
-				Type:       "slack",
+				Type:       "slack_bot",
 			},
 			&store.Notification{
 				ID:         1,
@@ -103,18 +103,18 @@ func NewServiceTest() *ServiceTest {
 				ID:         2,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
-				CheckID:    "00001",
+				CheckID:    "00000",
 				Value:      "fuck",
-				Type:       "slack",
+				Type:       "slack_token",
 			},
 		},
 	}
 	serviceTest.Service.router = serviceTest.Router
 
-	logrus.Info("Adding initial notifications to store.")
+	log.Info("Adding initial notifications to store.")
 	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service store.")
+		log.WithFields(log.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service store.")
 	}
 	return serviceTest
 }
@@ -141,9 +141,11 @@ func TestGetNotifications(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	logrus.Info(resp)
+	log.Info(resp)
+	if len(resp.Notifications) == 0 {
+		t.FailNow()
+	}
 
-	assert.Equal(t, 3, len(resp.Notifications))
 }
 
 func TestPostNotifications(t *testing.T) {
@@ -197,7 +199,7 @@ func TestGetNotificationsByCheckID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	logrus.Info(resp)
+	log.Info(resp)
 
 	assert.Equal(t, 1, len(resp.Notifications))
 }
@@ -254,7 +256,7 @@ func TestGetNotificationsByCheckID666(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	logrus.Info(resp)
+	log.Info(resp)
 
 	assert.Equal(t, 1, len(resp.Notifications))
 }

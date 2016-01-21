@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -19,8 +19,11 @@ type Config struct {
 	SqsUrl         string
 	OpseeHost      string
 	MandrillApiKey string
+	VapeEndpoint   string
+	VapeKey        string
 	MaxWorkers     int64
 	MinWorkers     int64
+	LogLevel       string
 	AWSSession     *session.Session
 }
 
@@ -43,6 +46,17 @@ func (config *Config) getAWSSession() {
 	})
 }
 
+func (config *Config) setLogLevel() {
+	if len(config.LogLevel) > 0 {
+		level, err := log.ParseLevel(config.LogLevel)
+		if err == nil {
+			log.SetLevel(level)
+			return
+		}
+	}
+	log.Warn("Config: couldn't parse loglevel.")
+}
+
 func GetConfig() *Config {
 	once.Do(func() {
 		// try to safely get max workers from env
@@ -63,10 +77,10 @@ func GetConfig() *Config {
 					minWorkers = minWorkersEnv
 				}
 			} else {
-				logrus.Warn("Errors getting HUGS_MAX_WORKERS and HUGS_MIN_WORKERS: ", err1, " ", err2)
+				log.Warn("Errors getting HUGS_MAX_WORKERS and HUGS_MIN_WORKERS: ", err1, " ", err2)
 			}
 		} else {
-			logrus.Warn("Config: using default value for MaxWorkers and MinWorkers")
+			log.Warn("Config: using default value for MaxWorkers and MinWorkers")
 		}
 
 		c := &Config{
@@ -75,13 +89,17 @@ func GetConfig() *Config {
 			SqsUrl:         os.Getenv("HUGS_SQS_URL"),
 			OpseeHost:      os.Getenv("HUGS_OPSEE_HOST"),
 			MandrillApiKey: os.Getenv("HUGS_MANDRILL_API_KEY"),
+			VapeEndpoint:   os.Getenv("HUGS_VAPE_ENDPOINT"),
+			VapeKey:        os.Getenv("HUGS_VAPE_KEYFILE"),
+			LogLevel:       os.Getenv("HUGS_LOG_LEVEL"),
 			MaxWorkers:     maxWorkers,
 			MinWorkers:     minWorkers,
 		}
+		c.setLogLevel()
 		c.getAWSSession()
 		hugsConfig = c
 
-		logrus.WithFields(logrus.Fields{"module": "config", "PublicHost": c.PublicHost, "SQSUrl": c.SqsUrl, "OpseeHost": c.OpseeHost, "MaxWorkers": c.MaxWorkers, "MinWorkers": c.MinWorkers}).Info("Created new config.")
+		log.WithFields(log.Fields{"module": "config", "PublicHost": c.PublicHost, "SQSUrl": c.SqsUrl, "OpseeHost": c.OpseeHost, "MaxWorkers": c.MaxWorkers, "MinWorkers": c.MinWorkers}).Info("Created new config.")
 	})
 
 	return hugsConfig
