@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/store"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // As in Job Site
@@ -118,19 +118,19 @@ func (foreman *Foreman) ComputeWorkerTarget(load int64) int64 {
 func (foreman *Foreman) EstimateWork() {
 	count, err := foreman.Site.GetJobsRemaining()
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes.")
+		log.WithFields(log.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes.")
 	}
 	count = foreman.safeWorkEstimate(count)
 	sma := foreman.computeJobCountSMA(count)
 	foreman.TargetWorkerCount = foreman.ComputeWorkerTarget(int64(sma))
-	logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Info("Foreman: Load SMA: ", sma, ". Currently ", foreman.CurrentWorkerCount, " workers. Target is ", foreman.TargetWorkerCount, " workers.")
+	log.WithFields(log.Fields{"foreman": foreman.ID}).Info("Foreman: Load SMA: ", sma, ". Currently ", foreman.CurrentWorkerCount, " workers. Target is ", foreman.TargetWorkerCount, " workers.")
 }
 
 // Initialize sma for past n estimates to current estimated work
 func (foreman *Foreman) initWorkEstimateHistory() {
 	count, err := foreman.Site.GetJobsRemaining()
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes")
+		log.WithFields(log.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes")
 	}
 	count = foreman.safeWorkEstimate(count)
 	for i := 0; i < len(foreman.PreviousWorkEstimates); i++ {
@@ -148,7 +148,7 @@ func (foreman *Foreman) AdjustWorkerCount() {
 			if foreman.CurrentWorkerCount < foreman.MaxWorkerCount {
 				foreman.recruitWorker()
 			} else {
-				logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Warn("Hit worker ceiling.")
+				log.WithFields(log.Fields{"foreman": foreman.ID}).Warn("Hit worker ceiling.")
 				break
 			}
 		}
@@ -158,7 +158,7 @@ func (foreman *Foreman) AdjustWorkerCount() {
 			if foreman.CurrentWorkerCount > foreman.MinWorkerCount {
 				foreman.discardWorker()
 			} else {
-				logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Warn("Hit worker floor.")
+				log.WithFields(log.Fields{"foreman": foreman.ID}).Warn("Hit worker floor.")
 				break
 			}
 		}
@@ -192,7 +192,7 @@ func (foreman *Foreman) discardWorker() {
 func (foreman *Foreman) recruitWorker() {
 	worker, err := NewWorker(foreman.Site)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't recruit new worker!")
+		log.WithFields(log.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't recruit new worker!")
 	}
 	worker.Start()
 }
@@ -225,12 +225,12 @@ func (foreman *Foreman) Start() {
 
 		wait := time.Duration(foreman.UpdateFreqSec)*time.Second - elapsed
 		if wait < time.Duration(0)*time.Second {
-			logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Warn("Couldn't finish tasks in allotted time!")
+			log.WithFields(log.Fields{"foreman": foreman.ID}).Warn("Couldn't finish tasks in allotted time!")
 			continue
 		}
 
 		time.Sleep(wait) // wait the rest of the minute
-		logrus.WithFields(logrus.Fields{"foreman": foreman.ID}).Info("Finished cycle @", time.Now())
+		log.WithFields(log.Fields{"foreman": foreman.ID}).Info("Finished cycle @", time.Now())
 	}
 }
 

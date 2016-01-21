@@ -10,12 +10,12 @@ import (
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
 )
 
-type SlackSender struct {
+type SlackHookSender struct {
 	templates map[string]*mustache.Template
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
-func (this SlackSender) Send(n *store.Notification, e Event) error {
+func (this *SlackHookSender) Send(n *store.Notification, e Event) error {
 
 	templateKey := "check-passing"
 	if e.FailCount > 0 {
@@ -46,7 +46,7 @@ func (this SlackSender) Send(n *store.Notification, e Event) error {
 	return nil
 }
 
-func NewSlackSender() (*SlackSender, error) {
+func NewSlackHookSender() (*SlackHookSender, error) {
 	// initialize check failing template
 	failTemplate, err := mustache.ParseString(slacktmpl.CheckFailing)
 	if err != nil {
@@ -64,7 +64,7 @@ func NewSlackSender() (*SlackSender, error) {
 		"check-passing": passTemplate,
 	}
 
-	return &SlackSender{
+	return &SlackHookSender{
 		templates: templateMap,
 	}, nil
 }

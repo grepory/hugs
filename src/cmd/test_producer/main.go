@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/opsee/hugs/config"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -41,7 +41,7 @@ func FranticallyWriteToSQS() {
 }
 
 func main() {
-	logrus.Info("Producer: Frantically writing messages to SQS-queue \"foo\" in us-east-1.")
+	log.Info("Producer: Frantically writing messages to SQS-queue \"foo\" in us-east-1.")
 	go FillChannel()
 	FranticallyWriteToSQS()
 }
