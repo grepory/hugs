@@ -12,6 +12,31 @@ var swaggerMap = j{
 		"description": "API for bastion management",
 	},
 	"paths": j{
+		"/services/slack": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "SlackOAuthRequest",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthRequest",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthResponse",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"slackauthcode"},
+			},
+		},
 		"/notifications": j{
 			"get": j{
 				"responses": j{
@@ -158,7 +183,48 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
+		"SlackOAuthRequest": j{
+			"properties": j{
+				"client_id": j{
+					"type": "string",
+				},
+				"client_secret": j{
+					"type": "string",
+				},
+				"code": j{
+					"type": "string",
+				},
+				"redirect_uri": j{
+					"type": "string",
+				},
+			},
+			"required": k{
+				"code",
+			},
+			"type": "object",
+		},
+		"SlackOAuthResponse": j{
+			"properties": j{
+				"access_token": j{
+					"type": "string",
+				},
+				"scope": j{
+					"type": "string",
+				},
+				"team_name": j{
+					"type": "string",
+				},
+				"team_id": j{
+					"type": "string",
+				},
+			},
+			"required": k{
+				"access_token", "scope", "team_name", "team_id",
+			},
+			"type": "object",
+		},
 	},
+
 	"consumes": j{},
 	"produces": j{},
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
+	"github.com/opsee/hugs/apiutils"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/store"
 )
@@ -51,6 +52,10 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckID())
 	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
 	rtr.Handle("PUT", "/notifications/:check_id", decoders(com.User{}, CheckNotifications{}), s.putNotificationsByCheckID())
+	rtr.Handle("POST", "/services/slack", decoders(com.User{}, apiutils.SlackOAuthRequest{}), s.postSlackCode())
+
+	// TODO(dan) endpoint to get slack token from
+	// TODO(dan) endpoint to get slack channels from
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -197,6 +202,36 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 		}
 
 		return nil, http.StatusOK, nil
+
+	}
+}
+
+func (s *Service) postSlackCode() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		_, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		request, ok := ctx.Value(requestKey).(*apiutils.SlackOAuthRequest)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		oaRequest := &apiutils.SlackOAuthRequest{
+			ClientID:     config.GetConfig().SlackClientID,
+			ClientSecret: config.GetConfig().SlackClientSecret,
+			Code:         request.Code,
+			RedirectURI:  request.RedirectURI,
+		}
+
+		response, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
+		if err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		// TODO(dan) Save the OAuth Response
+		return response, http.StatusOK, nil
 	}
 }
 

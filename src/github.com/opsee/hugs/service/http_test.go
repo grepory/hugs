@@ -14,6 +14,7 @@ import (
 
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
+	"github.com/opsee/hugs/apiutils"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -110,6 +111,8 @@ func NewServiceTest() *ServiceTest {
 		},
 	}
 	serviceTest.Service.router = serviceTest.Router
+	log.Info("Starting slack api emulator")
+	go apiutils.StartSlackAPIEmulator()
 
 	log.Info("Adding initial notifications to store.")
 	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
@@ -263,6 +266,31 @@ func TestGetNotificationsByCheckID666(t *testing.T) {
 
 func TestDeleteNotifications(t *testing.T) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifications/00002", Common.Service.config.PublicHost), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
+func TestPostSlackCode(t *testing.T) {
+	oar := &apiutils.SlackOAuthRequest{
+		Code:        "test",
+		RedirectURI: "test",
+	}
+
+	oarbits, err := json.Marshal(oar)
+	if err != nil {
+		t.FailNow()
+	}
+
+	rdr := bytes.NewBufferString(string(oarbits))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/services/slack", Common.Service.config.PublicHost), rdr)
 	if err != nil {
 		t.Fatal(err)
 	}

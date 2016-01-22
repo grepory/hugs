@@ -3,18 +3,13 @@ package apiutils
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
 )
 
 var SlackOAuthEndpoint = "https://slack.com/api/oauth.access"
-
-// Oauth request for slack token
-type SlackOAuthRequest struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	Code         string `json:"code"`
-	RedirectURI  string `json:"redirect_uri"`
-}
 
 // Oath response for slack token
 type SlackOAuthResponse struct {
@@ -35,6 +30,22 @@ type SlackIncomingWebhook struct {
 type SlackBotCreds struct {
 	BotUserID      string `json:"bot_user_id"`
 	BotAccessToken string `json:"bot_access_token"`
+}
+
+// Oauth request for slack token
+type SlackOAuthRequest struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Code         string `json:"code"`
+	RedirectURI  string `json:"redirect_uri"`
+}
+
+// NOTE: THis is for the router decoder validation...
+func (this *SlackOAuthRequest) Validate() error {
+	if this.Code == "" {
+		return errors.New("There must at least be a code.")
+	}
+	return nil
 }
 
 func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) {
@@ -64,4 +75,31 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 	dec.Decode(slackResponse)
 
 	return slackResponse, nil
+}
+
+func StartSlackAPIEmulator() {
+	oaResponse := &SlackOAuthResponse{
+		AccessToken: "test",
+		Scope:       "test",
+		TeamName:    "test",
+		TeamID:      "test",
+		IncomingWebhook: &SlackIncomingWebhook{
+			URL:              "test",
+			Channel:          "test",
+			ConfigurationURL: "test",
+		},
+		Bot: &SlackBotCreds{
+			BotUserID:      "test",
+			BotAccessToken: "test",
+		},
+	}
+	oaResponseData, err := json.Marshal(oaResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+	http.HandleFunc("api/oath.access", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, string(oaResponseData), r.URL.Path)
+	})
+
+	log.Fatal(http.ListenAndServe(":7766", nil))
 }
