@@ -13,6 +13,8 @@ ENV HUGS_MIN_WOKERS ""
 ENV HUGS_VAPE_ENDPOINT ""
 ENV HUGS_VAPE_KEYFILE ""
 ENV HUGS_LOG_LEVEL ""
+ENV HUGS_SLACK_CLIENT_ID ""
+ENV HUGS_SLACK_CLIENT_SECRET ""
 
 RUN apk add --update bash ca-certificates curl
 RUN curl -Lo /opt/bin/migrate https://s3-us-west-2.amazonaws.com/opsee-releases/go/migrate/migrate-linux-amd64 && \
