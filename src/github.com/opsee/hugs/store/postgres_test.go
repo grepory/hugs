@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/opsee/basic/com"
+	"github.com/opsee/hugs/apiutils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -156,4 +157,40 @@ func TestStoreDeleteNotifications(t *testing.T) {
 		t.FailNow()
 	}
 	log.Info("TestStoreDeleteNotifications: PASS.")
+}
+
+func TestStorePutSlackOAuthResponse(t *testing.T) {
+	slackOAuthResponse := &apiutils.SlackOAuthResponse{
+		AccessToken: "test",
+		Scope:       "test",
+		TeamName:    "test",
+		TeamID:      "test",
+		IncomingWebhook: &apiutils.SlackIncomingWebhook{
+			URL:              "test",
+			Channel:          "test",
+			ConfigurationURL: "test",
+		},
+		Bot: &apiutils.SlackBotCreds{
+			BotUserID:      "test",
+			BotAccessToken: "test",
+		},
+	}
+
+	err := Common.DBStore.PutSlackOAuthResponse(Common.User, slackOAuthResponse)
+	if err != nil {
+		log.Error(err)
+		t.FailNow()
+	}
+}
+
+func TestStoreGetSlackOAuthResponses(t *testing.T) {
+	responses, err := Common.DBStore.GetSlackOAuthResponse(Common.User)
+	if err != nil {
+		log.Error(err)
+		t.FailNow()
+	}
+	if len(responses) == 0 {
+		t.FailNow()
+	}
+	log.Info("Got OAuthResponse: ", responses)
 }

@@ -3,12 +3,15 @@ package store
 import (
 	//"encoding/json"
 
+	"encoding/json"
 	"fmt"
 	"log"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx/types"
 	_ "github.com/lib/pq"
 	"github.com/opsee/basic/com"
+	"github.com/opsee/hugs/apiutils"
 )
 
 type Postgres struct {
@@ -155,5 +158,56 @@ func (pg *Postgres) DeleteNotification(user *com.User, notification *Notificatio
 
 func (pg *Postgres) DeleteNotificationsByUser(user *com.User) error {
 	_, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1`, user.CustomerID)
+	return err
+}
+
+func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
+	datjson, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	wrapper := &SlackOAuthResponseDBWrapper{
+		CustomerID: user.CustomerID,
+		Data:       types.JSONText(string(datjson)),
+	}
+
+	_, err = pg.db.NamedExec("INSERT INTO slack_oauth_responses (customer_id, data) VALUES (:customer_id, :data)", wrapper)
+	return err
+}
+
+func (pg *Postgres) GetSlackOAuthResponse(user *com.User) ([]*apiutils.SlackOAuthResponse, error) {
+	oaResponses := []*apiutils.SlackOAuthResponse{}
+	rows, err := pg.db.Queryx("SELECT data from slack_oauth_responses WHERE customer_id = $1", user.CustomerID)
+	if err != nil {
+		return oaResponses, err
+	}
+
+	for rows.Next() {
+		var wrappedOAResponse SlackOAuthResponseDBWrapper
+		err := rows.StructScan(&wrappedOAResponse)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		oaResponse := apiutils.SlackOAuthResponse{}
+		err = wrappedOAResponse.Data.Unmarshal(&oaResponse)
+		if err != nil {
+			continue
+		}
+
+		oaResponses = append(oaResponses, &oaResponse)
+	}
+	return oaResponses, err
+}
+
+func (pg *Postgres) UpdateSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
+	datjson, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	data := types.JSONText(string(datjson))
+	_, err = pg.db.Queryx(`UPDATE slack_oauth_responses SET data=$1 where customer_id=$2`, data, user.CustomerID)
 	return err
 }
