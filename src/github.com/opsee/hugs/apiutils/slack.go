@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+var SlackOAuthEndpoint = "https://slack.com/api/oauth.access"
+
 // Oauth request for slack token
 type SlackOAuthRequest struct {
 	ClientID     string `json:"client_id"`
