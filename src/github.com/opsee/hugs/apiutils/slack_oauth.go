@@ -1,10 +1,11 @@
 package apiutils
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 )
 
 var SlackOAuthEndpoint = "https://slack.com/api/oauth.access"
@@ -54,23 +55,26 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 		code          - the code param (required)
 		redirect_uri  - must match the originally submitted URI (if one was sent)
 	*/
-	datjson, err := json.Marshal(this)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(datjson))
-	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	values := url.Values{
+		"client_id":     {this.ClientID},
+		"client_secret": {this.ClientSecret},
+		"code":          {this.Code},
+		"redirect_uri":  {this.RedirectURI},
+	}
+
+	resp, err := http.PostForm(endpoint, values)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	slackResponse := &SlackOAuthResponse{}
+
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(slackResponse)
+	err = dec.Decode(&slackResponse)
+	if err != nil {
+		fmt.Printf("%T\n%s\n%#v\n", err, err, err)
+	}
 
 	return slackResponse, nil
 }

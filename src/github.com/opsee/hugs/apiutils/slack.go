@@ -23,11 +23,12 @@ func StartSlackAPIEmulator() {
 			BotAccessToken: "test",
 		},
 	}
+
 	oaResponseData, err := json.Marshal(oaResponse)
 	if err != nil {
 		log.Fatal(err)
 	}
-	http.HandleFunc("api/oath.access", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/oauth.access", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(oaResponseData), r.URL.Path)
 	})
 
