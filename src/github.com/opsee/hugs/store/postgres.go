@@ -117,8 +117,8 @@ func (pg *Postgres) UpdateNotification(user *com.User, notification *Notificatio
 		return fmt.Errorf("User is not allowed to modify this notification")
 	}
 
-	_, err = pg.db.Queryx(`UPDATE notifications SET check_id=$1, value=$2, type=$3`,
-		notification.CheckID, notification.Value, notification.Type)
+	_, err = pg.db.Queryx(`UPDATE notifications SET check_id=$1, value=$2, type=$3 WHERE id=$4`,
+		notification.CheckID, notification.Value, notification.Type, notification.ID)
 
 	return err
 }
@@ -161,13 +161,26 @@ func (pg *Postgres) DeleteNotificationsByUser(user *com.User) error {
 	return err
 }
 
+func (pg *Postgres) DeleteSlackOAuthResponsesByUser(user *com.User) error {
+	_, err := pg.db.Queryx(`DELETE from slack_oauth_responses WHERE customer_id=$1`, user.CustomerID)
+	return err
+}
+
+// TODO(dan) decide whether we want to limit customer-ids to one slack integration
+// TODO(dan) right now we delete all of the existing responses prior to adding one
 func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
 	datjson, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
 
-	wrapper := &SlackOAuthResponseDBWrapper{
+	// Ensure we only have one for right now
+	err = pg.DeleteSlackOAuthResponsesByUser(user)
+	if err != nil {
+		return err
+	}
+
+	wrapper := SlackOAuthResponseDBWrapper{
 		CustomerID: user.CustomerID,
 		Data:       types.JSONText(string(datjson)),
 	}
@@ -176,7 +189,23 @@ func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuth
 	return err
 }
 
-func (pg *Postgres) GetSlackOAuthResponse(user *com.User) ([]*apiutils.SlackOAuthResponse, error) {
+// TODO(dan) Operating under the assumption that one token/user, this will return that one token
+// leaving the GetSlackOAuthReponses in case we allow more than one integration per customer
+func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*apiutils.SlackOAuthResponse, error) {
+	oaResponses, err := pg.GetSlackOAuthResponses(user)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(oaResponses) > 0 {
+		return oaResponses[0], nil
+	}
+
+	return nil, fmt.Errorf("No oath responses.")
+}
+
+// TODO(dan) decide whether we want to limit customer-ids to one slack integration
+func (pg *Postgres) GetSlackOAuthResponses(user *com.User) ([]*apiutils.SlackOAuthResponse, error) {
 	oaResponses := []*apiutils.SlackOAuthResponse{}
 	rows, err := pg.db.Queryx("SELECT data from slack_oauth_responses WHERE customer_id = $1", user.CustomerID)
 	if err != nil {
@@ -198,15 +227,16 @@ func (pg *Postgres) GetSlackOAuthResponse(user *com.User) ([]*apiutils.SlackOAut
 
 		oaResponses = append(oaResponses, &oaResponse)
 	}
+
 	return oaResponses, err
 }
 
+// TODO(dan) decide whether we want to limit customer-ids to one slack integration
 func (pg *Postgres) UpdateSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
 	datjson, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
-
 	data := types.JSONText(string(datjson))
 	_, err = pg.db.Queryx(`UPDATE slack_oauth_responses SET data=$1 where customer_id=$2`, data, user.CustomerID)
 	return err

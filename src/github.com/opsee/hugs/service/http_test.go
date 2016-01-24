@@ -15,6 +15,7 @@ import (
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/apiutils"
+	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -89,7 +90,7 @@ func NewServiceTest() *ServiceTest {
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "00000",
-				Value:      "off",
+				Value:      "C0ATUFZ7X", // this a channel
 				Type:       "slack_bot",
 			},
 			&store.Notification{
@@ -97,7 +98,7 @@ func NewServiceTest() *ServiceTest {
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "00000",
-				Value:      "you",
+				Value:      "dan@opsee.com",
 				Type:       "email",
 			},
 			&store.Notification{
@@ -105,20 +106,35 @@ func NewServiceTest() *ServiceTest {
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "00000",
-				Value:      "fuck",
-				Type:       "slack_token",
+				Value:      "someslackhook.com",
+				Type:       "slack_hook",
 			},
 		},
 	}
+
 	serviceTest.Service.router = serviceTest.Router
-	log.Info("Starting slack api emulator")
+	log.Info("Starting slack api emulator...")
 	go apiutils.StartSlackAPIEmulator()
 
-	log.Info("Adding initial notifications to store.")
+	log.Info("Adding initial notifications to store...")
 	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
 	if err != nil {
 		log.WithFields(log.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service store.")
 	}
+
+	log.Info("Adding initial slack oauth shit to store...")
+	slackOAuthResponse := &apiutils.SlackOAuthResponse{
+		AccessToken: config.GetConfig().SlackTestToken,
+		Scope:       "bot",
+		TeamName:    "opsee",
+		TeamID:      "opsee",
+	}
+
+	err = serviceTest.Service.db.PutSlackOAuthResponse(serviceTest.User, slackOAuthResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return serviceTest
 }
 
@@ -148,7 +164,6 @@ func TestGetNotifications(t *testing.T) {
 	if len(resp.Notifications) == 0 {
 		t.FailNow()
 	}
-
 }
 
 func TestPostNotifications(t *testing.T) {
@@ -260,8 +275,9 @@ func TestGetNotificationsByCheckID666(t *testing.T) {
 	}
 
 	log.Info(resp)
-
-	assert.Equal(t, 1, len(resp.Notifications))
+	if len(resp.Notifications) == 0 {
+		t.FailNow()
+	}
 }
 
 func TestDeleteNotifications(t *testing.T) {
@@ -275,6 +291,21 @@ func TestDeleteNotifications(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
+func TestGetSlackChannels(t *testing.T) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/services/slack/channels", Common.Service.config.PublicHost), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+	Common.Service.router.ServeHTTP(rw, req)
+	log.WithFields(log.Fields{"TestGetSlackChannels": "Got channel list."}).Info(rw.Body)
+
 	assert.Equal(t, http.StatusOK, rw.Code)
 }
 
@@ -300,5 +331,28 @@ func TestPostSlackCode(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
+func TestGetSlackToken(t *testing.T) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/services/slack", Common.Service.config.PublicHost), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+
+	var resp apiutils.SlackOAuthResponse
+
+	err = json.Unmarshal(rw.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	log.WithFields(log.Fields{"TestGetSlackToken": "Got slack token."}).Info(resp.AccessToken)
 	assert.Equal(t, http.StatusOK, rw.Code)
 }

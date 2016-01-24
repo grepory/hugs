@@ -18,7 +18,7 @@ create table notifications (
 
 create table slack_oauth_responses (
     id serial primary key,
-    customer_id UUID references customers(id) on delete cascade,
+    customer_id UUID references customers(id) unique on delete cascade,
     data jsonb not null
 );
 

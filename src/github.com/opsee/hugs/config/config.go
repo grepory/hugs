@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// TODO(dan) consider splitting this into configs and testconfigs for each module
 type Config struct {
 	PublicHost        string
 	PostgresConn      string
@@ -26,6 +27,7 @@ type Config struct {
 	LogLevel          string
 	SlackClientSecret string
 	SlackClientID     string
+	SlackTestToken    string
 	AWSSession        *session.Session
 }
 
@@ -96,6 +98,7 @@ func GetConfig() *Config {
 			LogLevel:          os.Getenv("HUGS_LOG_LEVEL"),
 			SlackClientID:     os.Getenv("HUGS_SLACK_CLIENT_ID"),
 			SlackClientSecret: os.Getenv("HUGS_SLACK_CLIENT_SECRET"),
+			SlackTestToken:    os.Getenv("HUGS_SLACK_TEST_TOKEN"),
 			MaxWorkers:        maxWorkers,
 			MinWorkers:        minWorkers,
 		}

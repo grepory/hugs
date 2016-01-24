@@ -12,6 +12,22 @@ var swaggerMap = j{
 		"description": "API for bastion management",
 	},
 	"paths": j{
+		"/services/slack/channels": j{
+			"get": j{
+				"parameters": []j{},
+				"responses": j{
+					"200": j{
+						"description": "List customer's slack channels.",
+						"schema": j{
+							"$ref": "#/definitions/SlackChannelsResponse",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"getslackchannels"},
+			},
+		},
+
 		"/services/slack": j{
 			"post": j{
 				"parameters": []j{
@@ -34,9 +50,24 @@ var swaggerMap = j{
 					},
 				},
 				"summary": "Create a new notification.",
-				"tags":    k{"slackauthcode"},
+				"tags":    k{"postslackauthcode"},
+			},
+
+			"get": j{
+				"parameters": []j{},
+				"responses": j{
+					"200": j{
+						"description": "Get a customer's slack token",
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthResponse",
+						},
+					},
+				},
+				"summary": "Get a customer's slack token.",
+				"tags":    k{"getslacktoken"},
 			},
 		},
+
 		"/notifications": j{
 			"get": j{
 				"responses": j{
@@ -77,6 +108,7 @@ var swaggerMap = j{
 				"tags":    k{"notifications"},
 			},
 		},
+
 		"/notifications/j {check_id}": j{
 			"delete": j{
 				"parameters": []j{
@@ -96,6 +128,7 @@ var swaggerMap = j{
 				"summary": "Deletes a notification.",
 				"tags":    k{"notifications"},
 			},
+
 			"get": j{
 				"parameters": []j{
 					j{
@@ -117,6 +150,7 @@ var swaggerMap = j{
 				"summary": "Retrieves a notification.",
 				"tags":    k{"notifications"},
 			},
+
 			"put": j{
 				"parameters": []j{
 					j{
@@ -149,6 +183,7 @@ var swaggerMap = j{
 			},
 		},
 	},
+
 	"definitions": j{
 		"CheckNotifications": j{
 			"properties": j{
@@ -168,6 +203,7 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
+
 		"Notification": j{
 			"properties": j{
 				"type": j{
@@ -183,6 +219,7 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
+
 		"SlackOAuthRequest": j{
 			"properties": j{
 				"client_id": j{
@@ -203,6 +240,7 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
+
 		"SlackOAuthResponse": j{
 			"properties": j{
 				"access_token": j{
@@ -220,6 +258,37 @@ var swaggerMap = j{
 			},
 			"required": k{
 				"access_token", "scope", "team_name", "team_id",
+			},
+			"type": "object",
+		},
+
+		"SlackChannels": j{
+			"properties": j{
+				"channels": j{
+					"items": j{
+						"$ref": "#/definitions/SlackChannel",
+					},
+					"type": "array",
+				},
+			},
+			"required": k{
+				"channels",
+			},
+			"type": "object",
+		},
+
+		"SlackChannel": j{
+			"properties": j{
+				"id": j{
+					"type": "string",
+				},
+				"name": j{
+					"type": "string",
+				},
+			},
+			"required": k{
+				"id",
+				"name",
 			},
 			"type": "object",
 		},

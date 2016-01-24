@@ -183,14 +183,48 @@ func TestStorePutSlackOAuthResponse(t *testing.T) {
 	}
 }
 
-func TestStoreGetSlackOAuthResponses(t *testing.T) {
-	responses, err := Common.DBStore.GetSlackOAuthResponse(Common.User)
+func TestStoreUpdateSlackOAuthResponse(t *testing.T) {
+	slackOAuthResponse := &apiutils.SlackOAuthResponse{
+		AccessToken: "test",
+		Scope:       "test",
+		TeamName:    "feck",
+		TeamID:      "test",
+		IncomingWebhook: &apiutils.SlackIncomingWebhook{
+			URL:              "test",
+			Channel:          "test",
+			ConfigurationURL: "test",
+		},
+		Bot: &apiutils.SlackBotCreds{
+			BotUserID:      "test",
+			BotAccessToken: "test",
+		},
+	}
+
+	err := Common.DBStore.UpdateSlackOAuthResponse(Common.User, slackOAuthResponse)
 	if err != nil {
 		log.Error(err)
 		t.FailNow()
 	}
+}
+
+func TestStoreGetSlackOAuthResponse(t *testing.T) {
+	_, err := Common.DBStore.GetSlackOAuthResponse(Common.User)
+	if err != nil {
+		log.Error(err)
+		t.FailNow()
+	}
+}
+
+func TestStoreGetSlackOAuthResponses(t *testing.T) {
+	responses, err := Common.DBStore.GetSlackOAuthResponses(Common.User)
+	if err != nil {
+		log.Error(err)
+		t.FailNow()
+	}
+
 	if len(responses) == 0 {
 		t.FailNow()
 	}
-	log.Info("Got OAuthResponse: ", responses)
+
+	log.Info("Got OAuthResponse: ", responses[0])
 }

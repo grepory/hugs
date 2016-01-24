@@ -134,6 +134,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/nlopes/slack",
+			"repository": "https://github.com/nlopes/slack",
+			"revision": "fecd1dd0008dcb1a01e18b900b1abd4fd4e79177",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/opsee/basic/com",
 			"repository": "https://github.com/opsee/basic",
 			"revision": "fc0bd27acdf0f3cd13d25dbaf91d307c3f41cf2e",
@@ -194,6 +200,13 @@
 			"revision": "5c0dae85e44dc88c505452f2e220f1390538a0d1",
 			"branch": "master",
 			"path": "/context"
+		},
+		{
+			"importpath": "golang.org/x/net/websocket",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "2e9cee70ee697e0a2ef894b560dda50dec7dff58",
+			"branch": "master",
+			"path": "/websocket"
 		},
 		{
 			"importpath": "gopkg.in/airbrake/gobrake.v2",

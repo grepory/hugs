@@ -8,11 +8,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/nlopes/slack"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/apiutils"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/store"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -53,6 +55,8 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
 	rtr.Handle("PUT", "/notifications/:check_id", decoders(com.User{}, CheckNotifications{}), s.putNotificationsByCheckID())
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, apiutils.SlackOAuthRequest{}), s.postSlackCode())
+	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
+	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
 
 	// TODO(dan) endpoint to get slack token from
 	// TODO(dan) endpoint to get slack channels from
@@ -206,9 +210,11 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 	}
 }
 
+// Finish the oauth flow and get token from slack.
+// Save the oauth response from slack and return token to front-end
 func (s *Service) postSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		_, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -225,13 +231,72 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 			RedirectURI:  request.RedirectURI,
 		}
 
-		response, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
+		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
 		}
 
-		// TODO(dan) Save the OAuth Response
+		err = s.db.PutSlackOAuthResponse(user, oaResponse)
+		if err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		return oaResponse, http.StatusOK, nil
+	}
+}
+
+// Gets users slack token from db, then gets channels from API.
+// TODO(dan) maybe store them in case we can't connect to slack.
+func (s *Service) getSlackChannels() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		oaResponse, err := s.db.GetSlackOAuthResponse(user)
+		if err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		log.Info(oaResponse.AccessToken)
+
+		api := slack.New(oaResponse.AccessToken)
+		channels, err := api.GetChannels(true)
+		if err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		respChannels := []*SlackChannel{}
+		for _, channel := range channels {
+			slackChan := &SlackChannel{
+				ID:   channel.ID,
+				Name: channel.Name,
+			}
+			respChannels = append(respChannels, slackChan)
+		}
+		response := &SlackChannels{
+			Channels: respChannels,
+		}
+
 		return response, http.StatusOK, nil
+	}
+}
+
+// Fetch slack token from database
+func (s *Service) getSlackToken() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		oaResponse, err := s.db.GetSlackOAuthResponse(user)
+		if err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		return oaResponse, http.StatusOK, nil
 	}
 }
 
