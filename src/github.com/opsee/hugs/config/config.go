@@ -101,7 +101,7 @@ func GetConfig() *Config {
 			SlackClientID:         os.Getenv("HUGS_SLACK_CLIENT_ID"),
 			SlackClientSecret:     os.Getenv("HUGS_SLACK_CLIENT_SECRET"),
 			SlackTestToken:        os.Getenv("HUGS_SLACK_TEST_TOKEN"),
-			SlackTestClientID:     os.Getenv("HUGS_TEST_CLIENT_ID"),
+			SlackTestClientID:     os.Getenv("HUGS_TEST_SLACK_CLIENT_ID"),
 			SlackTestClientSecret: os.Getenv("HUGS_TEST_SLACK_CLIENT_SECRET"),
 			MaxWorkers:            maxWorkers,
 			MinWorkers:            minWorkers,

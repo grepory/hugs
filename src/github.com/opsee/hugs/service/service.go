@@ -45,7 +45,7 @@ func (s *Service) NewRouter() *tp.Router {
 
 	rtr.CORS(
 		[]string{"GET", "POST", "DELETE", "HEAD"},
-		[]string{`https?://localhost:666`, `https://(\w+\.)?opsee\.com`},
+		[]string{`https?://localhost:9097`, `https://(\w+\.)?opsee\.com`},
 	)
 
 	rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
@@ -57,7 +57,6 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, apiutils.SlackOAuthRequest{}), s.postSlackCode())
 	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
-	rtr.Handle("GET", "/services/slack/test/button", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getSlackTestButton())
 	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getSlackTestCode())
 
 	// TODO(dan) endpoint to get slack token from
@@ -297,20 +296,6 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 		}
 
 		return oaResponse, http.StatusOK, nil
-	}
-}
-
-// Fetch slack token from database
-func (s *Service) getSlackTestButton() tp.HandleFunc {
-	return func(ctx context.Context) (interface{}, int, error) {
-		_, ok := ctx.Value(userKey).(*com.User)
-		if !ok {
-			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
-		}
-
-		buttonResponse := `<a href="https://slack.com/oauth/authorize?scope=incoming-webhook,bot&client_id=3378465181.19297683376"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"></a>`
-
-		return buttonResponse, http.StatusOK, nil
 	}
 }
 
