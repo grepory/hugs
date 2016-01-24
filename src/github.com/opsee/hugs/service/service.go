@@ -317,7 +317,7 @@ func (s *Service) getSlackTestCode() tp.HandleFunc {
 		if ok && params.ByName("state") != "" {
 			state = params.ByName("state")
 		}
-		log.Info("OAUTH STATE: ", state)
+		log.Info("Received OAuth state: ", state)
 
 		// Might need to pass state as well...
 		oaRequest := &apiutils.SlackOAuthRequest{
