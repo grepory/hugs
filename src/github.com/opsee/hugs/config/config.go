@@ -15,20 +15,22 @@ import (
 
 // TODO(dan) consider splitting this into configs and testconfigs for each module
 type Config struct {
-	PublicHost        string
-	PostgresConn      string
-	SqsUrl            string
-	OpseeHost         string
-	MandrillApiKey    string
-	VapeEndpoint      string
-	VapeKey           string
-	MaxWorkers        int64
-	MinWorkers        int64
-	LogLevel          string
-	SlackClientSecret string
-	SlackClientID     string
-	SlackTestToken    string
-	AWSSession        *session.Session
+	PublicHost            string
+	PostgresConn          string
+	SqsUrl                string
+	OpseeHost             string
+	MandrillApiKey        string
+	VapeEndpoint          string
+	VapeKey               string
+	MaxWorkers            int64
+	MinWorkers            int64
+	LogLevel              string
+	SlackClientSecret     string
+	SlackClientID         string
+	SlackTestToken        string
+	SlackTestClientSecret string
+	SlackTestClientID     string
+	AWSSession            *session.Session
 }
 
 var hugsConfig *Config
@@ -88,25 +90,27 @@ func GetConfig() *Config {
 		}
 
 		c := &Config{
-			PublicHost:        os.Getenv("HUGS_HOST"),
-			PostgresConn:      os.Getenv("HUGS_POSTGRES_CONN"),
-			SqsUrl:            os.Getenv("HUGS_SQS_URL"),
-			OpseeHost:         os.Getenv("HUGS_OPSEE_HOST"),
-			MandrillApiKey:    os.Getenv("HUGS_MANDRILL_API_KEY"),
-			VapeEndpoint:      os.Getenv("HUGS_VAPE_ENDPOINT"),
-			VapeKey:           os.Getenv("HUGS_VAPE_KEYFILE"),
-			LogLevel:          os.Getenv("HUGS_LOG_LEVEL"),
-			SlackClientID:     os.Getenv("HUGS_SLACK_CLIENT_ID"),
-			SlackClientSecret: os.Getenv("HUGS_SLACK_CLIENT_SECRET"),
-			SlackTestToken:    os.Getenv("HUGS_SLACK_TEST_TOKEN"),
-			MaxWorkers:        maxWorkers,
-			MinWorkers:        minWorkers,
+			PublicHost:            os.Getenv("HUGS_HOST"),
+			PostgresConn:          os.Getenv("HUGS_POSTGRES_CONN"),
+			SqsUrl:                os.Getenv("HUGS_SQS_URL"),
+			OpseeHost:             os.Getenv("HUGS_OPSEE_HOST"),
+			MandrillApiKey:        os.Getenv("HUGS_MANDRILL_API_KEY"),
+			VapeEndpoint:          os.Getenv("HUGS_VAPE_ENDPOINT"),
+			VapeKey:               os.Getenv("HUGS_VAPE_KEYFILE"),
+			LogLevel:              os.Getenv("HUGS_LOG_LEVEL"),
+			SlackClientID:         os.Getenv("HUGS_SLACK_CLIENT_ID"),
+			SlackClientSecret:     os.Getenv("HUGS_SLACK_CLIENT_SECRET"),
+			SlackTestToken:        os.Getenv("HUGS_SLACK_TEST_TOKEN"),
+			SlackTestClientID:     os.Getenv("HUGS_TEST_CLIENT_ID"),
+			SlackTestClientSecret: os.Getenv("HUGS_TEST_SLACK_CLIENT_SECRET"),
+			MaxWorkers:            maxWorkers,
+			MinWorkers:            minWorkers,
 		}
 		c.setLogLevel()
 		c.getAWSSession()
 		hugsConfig = c
 
-		log.WithFields(log.Fields{"module": "config", "PublicHost": c.PublicHost, "SQSUrl": c.SqsUrl, "OpseeHost": c.OpseeHost, "MaxWorkers": c.MaxWorkers, "MinWorkers": c.MinWorkers}).Info("Created new config.")
+		log.WithFields(log.Fields{"module": "config", "PublicHost": c.PublicHost, "SQSUrl": c.SqsUrl, "OpseeHost": c.OpseeHost, "MaxWorkers": c.MaxWorkers, "MinWorkers": c.MinWorkers, "SlackClientID": c.SlackClientID, "SlackTestClientID": c.SlackTestClientID}).Info("Created new config.")
 	})
 
 	return hugsConfig

@@ -12,6 +12,53 @@ var swaggerMap = j{
 		"description": "API for bastion management",
 	},
 	"paths": j{
+		"/services/slack/test/button": j{
+			"get": j{
+				"parameters": []j{},
+				"responses": j{
+					"200": j{
+						"description": "Slack's test oauth button.",
+						"schema": j{
+							"type": "string",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"getslacktestbutton"},
+			},
+		},
+
+		"/services/slack/test/code": j{
+			"get": j{
+				"parameters": []j{
+					j{
+						"description": "Slack authorization code.",
+						"in":          "query",
+						"name":        "code",
+						"required":    true,
+						"type":        "string",
+					},
+					j{
+						"description": "Slack authorization state.",
+						"in":          "query",
+						"name":        "state",
+						"required":    false,
+						"type":        "string",
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthResponse",
+						},
+					},
+				},
+				"summary": "Retrieves a test code.",
+				"tags":    k{"token"},
+			},
+		},
+
 		"/services/slack/channels": j{
 			"get": j{
 				"parameters": []j{},
