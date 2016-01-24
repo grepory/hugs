@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"golang.org/x/net/context"
@@ -22,6 +23,7 @@ const (
 	userKey
 	requestKey
 	paramsKey
+	queryKey
 )
 
 var (
@@ -57,10 +59,10 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, apiutils.SlackOAuthRequest{}), s.postSlackCode())
 	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
-	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getSlackTestCode())
 
-	// TODO(dan) endpoint to get slack token from
-	// TODO(dan) endpoint to get slack channels from
+	//TODO(dan) This uses a decoder func that's not been committed to basic!
+	// NOTE!
+	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.QueryDecoder(queryKey)}, s.getSlackTestCode())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -237,6 +239,10 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 			return ctx, http.StatusInternalServerError, err
 		}
 
+		if err = oaResponse.Validate(); err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
@@ -291,8 +297,12 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 		}
 
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
+		log.Info(oaResponse)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
+		}
+		if oaResponse == nil {
+			return ctx, http.StatusNotFound, nil
 		}
 
 		return oaResponse, http.StatusOK, nil
@@ -307,16 +317,10 @@ func (s *Service) getSlackTestCode() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		code := ""
-		state := ""
+		q := ctx.Value(queryKey).(url.Values)
+		code := q["code"][0]
+		state := q["state"][0]
 
-		params, ok := ctx.Value(paramsKey).(httprouter.Params)
-		if ok && params.ByName("code") != "" {
-			code = params.ByName("code")
-		}
-		if ok && params.ByName("state") != "" {
-			state = params.ByName("state")
-		}
 		log.Info("Received OAuth state: ", state)
 
 		// Might need to pass state as well...
@@ -341,6 +345,7 @@ func decoders(userType interface{}, requestType interface{}) []tp.DecodeFunc {
 		tp.AuthorizationDecodeFunc(userKey, userType),
 		tp.RequestDecodeFunc(requestKey, requestType),
 		tp.ParamsDecoder(paramsKey),
+		tp.QueryDecoder(queryKey),
 	}
 }
 

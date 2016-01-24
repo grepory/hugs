@@ -208,11 +208,12 @@ func TestStoreUpdateSlackOAuthResponse(t *testing.T) {
 }
 
 func TestStoreGetSlackOAuthResponse(t *testing.T) {
-	_, err := Common.DBStore.GetSlackOAuthResponse(Common.User)
+	response, err := Common.DBStore.GetSlackOAuthResponse(Common.User)
 	if err != nil {
 		log.Error(err)
 		t.FailNow()
 	}
+	log.Info("Got OAuthResponse: ", response)
 }
 
 func TestStoreGetSlackOAuthResponses(t *testing.T) {

@@ -128,6 +128,15 @@ func NewServiceTest() *ServiceTest {
 		Scope:       "bot",
 		TeamName:    "opsee",
 		TeamID:      "opsee",
+		IncomingWebhook: &apiutils.SlackIncomingWebhook{
+			URL:              "test",
+			Channel:          "test",
+			ConfigurationURL: "test",
+		},
+		Bot: &apiutils.SlackBotCreds{
+			BotUserID:      "test",
+			BotAccessToken: "test",
+		},
 	}
 
 	err = serviceTest.Service.db.PutSlackOAuthResponse(serviceTest.User, slackOAuthResponse)
@@ -309,6 +318,30 @@ func TestGetSlackChannels(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rw.Code)
 }
 
+func TestGetSlackToken(t *testing.T) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/services/slack", Common.Service.config.PublicHost), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+
+	var resp apiutils.SlackOAuthResponse
+
+	err = json.Unmarshal(rw.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	log.WithFields(log.Fields{"TestGetSlackToken": "Got slack token."}).Info(resp)
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
+// Note that this should fail because code will be invalid.
 func TestPostSlackCode(t *testing.T) {
 	oar := &apiutils.SlackOAuthRequest{
 		Code:        "test",
@@ -331,28 +364,5 @@ func TestPostSlackCode(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
-	assert.Equal(t, http.StatusOK, rw.Code)
-}
-
-func TestGetSlackToken(t *testing.T) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/services/slack", Common.Service.config.PublicHost), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req.Header.Set("Authorization", Common.UserToken)
-
-	rw := httptest.NewRecorder()
-
-	Common.Service.router.ServeHTTP(rw, req)
-
-	var resp apiutils.SlackOAuthResponse
-
-	err = json.Unmarshal(rw.Body.Bytes(), &resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	log.WithFields(log.Fields{"TestGetSlackToken": "Got slack token."}).Info(resp.AccessToken)
-	assert.Equal(t, http.StatusOK, rw.Code)
+	assert.Equal(t, http.StatusInternalServerError, rw.Code)
 }
