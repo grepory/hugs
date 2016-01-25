@@ -311,7 +311,7 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 // get code from GET params and return token
 func (s *Service) getSlackTestCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		_, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -329,6 +329,11 @@ func (s *Service) getSlackTestCode() tp.HandleFunc {
 		}
 
 		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
+		if err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
 			return ctx, http.StatusInternalServerError, err
 		}
