@@ -19,3 +19,7 @@ type SlackOAuthResponseDBWrapper struct {
 	CustomerID string         `json:"customer_id" db:"customer_id"`
 	Data       types.JSONText `json:"data" db:"data"`
 }
+
+type Customer struct {
+	ID string `json:"id" db:"id"`
+}

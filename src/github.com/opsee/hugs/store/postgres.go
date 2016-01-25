@@ -5,7 +5,8 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/jmoiron/sqlx/types"
@@ -169,6 +170,13 @@ func (pg *Postgres) DeleteSlackOAuthResponsesByUser(user *com.User) error {
 // TODO(dan) decide whether we want to limit customer-ids to one slack integration
 // TODO(dan) right now we delete all of the existing responses prior to adding one
 func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
+	customer := Customer{}
+	err := pg.db.Get(&customer, "SELECT * from customers WHERE id=$1", user.CustomerID)
+
+	if customer.ID == "" {
+		pg.db.MustExec("INSERT INTO customers (id) VALUES ($1)", user.CustomerID)
+	}
+
 	datjson, err := json.Marshal(s)
 	if err != nil {
 		return err
