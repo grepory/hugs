@@ -98,123 +98,123 @@ var swaggerMap = j{
 				"tags":    k{"getslacktoken"},
 			},
 		},
-
-		"/notifications": j{
-			"get": j{
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema": j{
-							"items": j{
+		/*
+			"/notifications": j{
+				"get": j{
+					"responses": j{
+						"200": j{
+							"description": "",
+							"schema": j{
+								"items": j{
+									"$ref": "#/definitions/CheckNotifications",
+								},
+								"type": "array",
+							},
+						},
+					},
+					"summary": "Retrieve all of a customer's notifications",
+					"tags":    k{"notifications"},
+				},
+				"post": j{
+					"parameters": []j{
+						j{
+							"description": "",
+							"in":          "body",
+							"name":        "CheckNotifications",
+							"required":    true,
+							"schema": j{
 								"$ref": "#/definitions/CheckNotifications",
 							},
-							"type": "array",
 						},
 					},
-				},
-				"summary": "Retrieve all of a customer's notifications",
-				"tags":    k{"notifications"},
-			},
-			"post": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "body",
-						"name":        "CheckNotifications",
-						"required":    true,
-						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+					"responses": j{
+						"200": j{
+							"description": "",
+							"schema": j{
+								"$ref": "#/definitions/CheckNotifications",
+							},
 						},
 					},
+					"summary": "Create a new notification.",
+					"tags":    k{"notifications"},
 				},
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
-						},
-					},
-				},
-				"summary": "Create a new notification.",
-				"tags":    k{"notifications"},
-			},
-		},
-
-		"/notifications/j {check_id}": j{
-			"delete": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "path",
-						"name":        "check_id",
-						"required":    true,
-						"type":        "string",
-					},
-				},
-				"responses": j{
-					"default": j{
-						"description": "",
-					},
-				},
-				"summary": "Deletes a notification.",
-				"tags":    k{"notifications"},
 			},
 
-			"get": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "path",
-						"name":        "check_id",
-						"required":    true,
-						"type":        "string",
-					},
-				},
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+			"/notifications/j {check_id}": j{
+				"delete": j{
+					"parameters": []j{
+						j{
+							"description": "",
+							"in":          "path",
+							"name":        "check_id",
+							"required":    true,
+							"type":        "string",
 						},
 					},
+					"responses": j{
+						"default": j{
+							"description": "",
+						},
+					},
+					"summary": "Deletes a notification.",
+					"tags":    k{"notifications"},
 				},
-				"summary": "Retrieves a notification.",
-				"tags":    k{"notifications"},
-			},
 
-			"put": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "body",
-						"name":        "CheckNotifications",
-						"required":    true,
-						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+				"get": j{
+					"parameters": []j{
+						j{
+							"description": "",
+							"in":          "path",
+							"name":        "check_id",
+							"required":    true,
+							"type":        "string",
 						},
 					},
-					j{
-						"description": "",
-						"in":          "path",
-						"name":        "check_id",
-						"required":    true,
-						"type":        "string",
-					},
-				},
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+					"responses": j{
+						"200": j{
+							"description": "",
+							"schema": j{
+								"$ref": "#/definitions/CheckNotifications",
+							},
 						},
 					},
+					"summary": "Retrieves a notification.",
+					"tags":    k{"notifications"},
 				},
-				"summary": "Replaces a notification.",
-				"tags":    k{"notifications"},
+
+				"put": j{
+					"parameters": []j{
+						j{
+							"description": "",
+							"in":          "body",
+							"name":        "CheckNotifications",
+							"required":    true,
+							"schema": j{
+								"$ref": "#/definitions/CheckNotifications",
+							},
+						},
+						j{
+							"description": "",
+							"in":          "path",
+							"name":        "check_id",
+							"required":    true,
+							"type":        "string",
+						},
+					},
+					"responses": j{
+						"200": j{
+							"description": "",
+							"schema": j{
+								"$ref": "#/definitions/CheckNotifications",
+							},
+						},
+					},
+					"summary": "Replaces a notification.",
+					"tags":    k{"notifications"},
+				},
 			},
-		},
+		*/
 	},
-
 	"definitions": j{
 		"CheckNotifications": j{
 			"properties": j{
