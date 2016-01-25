@@ -12,7 +12,7 @@ var swaggerMap = j{
 		"description": "API for bastion management",
 	},
 	"paths": j{
-		"/services/slack/test/code": j{
+		"/services/slack/code": j{
 			"get": j{
 				"parameters": []j{
 					j{

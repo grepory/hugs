@@ -61,7 +61,7 @@ func (s *Service) NewRouter() *tp.Router {
 
 	//TODO(dan) This uses a decoder func that's not been committed to basic!
 	// NOTE!
-	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, apiutils.SlackOAuthRequest{})}, s.getSlackTestCode())
+	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, apiutils.SlackOAuthRequest{})}, s.getSlackTestCode())
 
 	rtr.Timeout(5 * time.Minute)
 
