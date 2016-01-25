@@ -61,14 +61,16 @@ func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([
 	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1", checkID)
 
 	// check to ensure that user matches returned notifications user
-	if err == nil {
-		for _, notification := range notifications {
-			// TODO(dan) Also check CustomerID?
-			if notification.UserID != user.ID {
-				return nil, fmt.Errorf("UserID does not match Notification UserID")
+	/*
+		if err == nil {
+			for _, notification := range notifications {
+				// TODO(dan) Also check CustomerID?
+				if notification.UserID != user.ID {
+					return nil, fmt.Errorf("UserID does not match Notification UserID")
+				}
 			}
 		}
-	}
+	*/
 
 	return notifications, err
 }
