@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"time"
 
 	"golang.org/x/net/context"
@@ -62,7 +61,7 @@ func (s *Service) NewRouter() *tp.Router {
 
 	//TODO(dan) This uses a decoder func that's not been committed to basic!
 	// NOTE!
-	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.QueryDecoder(queryKey)}, s.getSlackTestCode())
+	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, apiutils.SlackOAuthRequest{})}, s.getSlackTestCode())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -316,19 +315,17 @@ func (s *Service) getSlackTestCode() tp.HandleFunc {
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
-
-		q := ctx.Value(queryKey).(url.Values)
-		code := q["code"][0]
-		state := q["state"][0]
-
-		log.Info("Received OAuth state: ", state)
+		request, ok := ctx.Value(requestKey).(*apiutils.SlackOAuthRequest)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
 
 		// Might need to pass state as well...
 		oaRequest := &apiutils.SlackOAuthRequest{
 			ClientID:     config.GetConfig().SlackTestClientID,
 			ClientSecret: config.GetConfig().SlackTestClientSecret,
-			Code:         code,
-			RedirectURI:  "https://hugs.in.opsee.com/services/slack/test/code",
+			Code:         request.Code,
+			RedirectURI:  request.RedirectURI,
 		}
 
 		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
@@ -345,7 +342,6 @@ func decoders(userType interface{}, requestType interface{}) []tp.DecodeFunc {
 		tp.AuthorizationDecodeFunc(userKey, userType),
 		tp.RequestDecodeFunc(requestKey, requestType),
 		tp.ParamsDecoder(paramsKey),
-		tp.QueryDecoder(queryKey),
 	}
 }
 
