@@ -3,7 +3,6 @@ package apiutils
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -18,6 +17,14 @@ type SlackOAuthResponse struct {
 	TeamID          string                `json:"team_id" db:"team_id"`
 	IncomingWebhook *SlackIncomingWebhook `json:"incoming_webhook" db:"incoming_webhook"`
 	Bot             *SlackBotCreds        `json:"bot" db:"bot"`
+}
+
+// NOTE: THis is for the router decoder validation...
+func (this *SlackOAuthResponse) Validate() error {
+	if this.AccessToken == "" {
+		return errors.New("There must at least be an access token.")
+	}
+	return nil
 }
 
 type SlackIncomingWebhook struct {
@@ -73,7 +80,7 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&slackResponse)
 	if err != nil {
-		fmt.Printf("%T\n%s\n%#v\n", err, err, err)
+		return nil, err
 	}
 
 	return slackResponse, nil

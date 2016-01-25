@@ -201,7 +201,7 @@ func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*apiutils.SlackOAuthR
 		return oaResponses[0], nil
 	}
 
-	return nil, fmt.Errorf("No oath responses.")
+	return nil, nil
 }
 
 // TODO(dan) decide whether we want to limit customer-ids to one slack integration
