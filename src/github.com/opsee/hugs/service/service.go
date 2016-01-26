@@ -13,6 +13,7 @@ import (
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/apiutils"
 	"github.com/opsee/hugs/config"
+	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -51,17 +52,17 @@ func (s *Service) NewRouter() *tp.Router {
 
 	rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
 	rtr.Handle("GET", "/notifs", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
-	rtr.Handle("POST", "/notifs", decoders(com.User{}, CheckNotifications{}), s.postNotifications())
+	rtr.Handle("POST", "/notifs", decoders(com.User{}, obj.Notifications{}), s.postNotifications())
 	rtr.Handle("DELETE", "/notifs/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckID())
 	rtr.Handle("GET", "/notifs/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
-	rtr.Handle("PUT", "/notifs/:check_id", decoders(com.User{}, CheckNotifications{}), s.putNotificationsByCheckID())
-	rtr.Handle("POST", "/services/slack", decoders(com.User{}, apiutils.SlackOAuthRequest{}), s.postSlackCode())
+	rtr.Handle("PUT", "/notifs/:check_id", decoders(com.User{}, obj.Notifications{}), s.putNotificationsByCheckID())
+	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
 	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
 
 	//TODO(dan) This uses a decoder func that's not been committed to basic!
 	// NOTE!
-	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, apiutils.SlackOAuthRequest{})}, s.getSlackTestCode())
+	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -83,10 +84,11 @@ func (s *Service) getNotifications() tp.HandleFunc {
 
 		notifications, err := s.db.GetNotifications(user)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "getNotifications", "error": err}).Error("Couldn't get notifications from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
-		response := &CheckNotifications{Notifications: notifications}
+		response := &obj.Notifications{Notifications: notifications}
 
 		return response, http.StatusOK, nil
 	}
@@ -99,13 +101,14 @@ func (s *Service) postNotifications() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		request, ok := ctx.Value(requestKey).(*CheckNotifications)
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		err := s.db.PutNotifications(user, request.Notifications)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Couldn't put notifications in database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
@@ -134,10 +137,12 @@ func (s *Service) deleteNotificationsByCheckID() tp.HandleFunc {
 		// Get notifications by checkID and then call delete on each one
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 		err = s.db.DeleteNotifications(user, notifications)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
@@ -166,10 +171,11 @@ func (s *Service) getNotificationsByCheckID() tp.HandleFunc {
 		// Get notifications by checkID and then call delete on each one
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "getNotificationsByCheckID", "error": err}).Error("Couldn't get notifications from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
-		response := &CheckNotifications{Notifications: notifications}
+		response := &obj.Notifications{Notifications: notifications}
 
 		return response, http.StatusOK, nil
 	}
@@ -193,7 +199,7 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errors.New("Must specify check-id in request.")
 		}
 
-		request, ok := ctx.Value(requestKey).(*CheckNotifications)
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
@@ -214,6 +220,7 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 
 // Finish the oauth flow and get token from slack.
 // Save the oauth response from slack and return token to front-end
+// TODO(dan) Deprecate
 func (s *Service) postSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
@@ -221,12 +228,12 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		request, ok := ctx.Value(requestKey).(*apiutils.SlackOAuthRequest)
+		request, ok := ctx.Value(requestKey).(*obj.SlackOAuthRequest)
 		if !ok {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
-		oaRequest := &apiutils.SlackOAuthRequest{
+		oaRequest := &obj.SlackOAuthRequest{
 			ClientID:     config.GetConfig().SlackClientID,
 			ClientSecret: config.GetConfig().SlackClientSecret,
 			Code:         request.Code,
@@ -235,6 +242,7 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 
 		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't get oauth response from slack.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
@@ -244,6 +252,7 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't write slack oauth response to database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
@@ -262,24 +271,29 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Didn't get oauth response from database.")
 			return ctx, http.StatusInternalServerError, err
+		}
+		if oaResponse == nil {
+			return ctx, http.StatusNotFound, nil
 		}
 
 		api := slack.New(oaResponse.AccessToken)
 		channels, err := api.GetChannels(true)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Couldn't get channels from slack.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
-		respChannels := []*SlackChannel{}
+		respChannels := []*obj.SlackChannel{}
 		for _, channel := range channels {
-			slackChan := &SlackChannel{
+			slackChan := &obj.SlackChannel{
 				ID:   channel.ID,
 				Name: channel.Name,
 			}
 			respChannels = append(respChannels, slackChan)
 		}
-		response := &SlackChannels{
+		response := &obj.SlackChannels{
 			Channels: respChannels,
 		}
 
@@ -296,8 +310,8 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 		}
 
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
-		log.Info(oaResponse)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "getSlackToken", "error": err}).Error("Didn't get oauth response from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 		if oaResponse == nil {
@@ -309,32 +323,34 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 }
 
 // get code from GET params and return token
-func (s *Service) getSlackTestCode() tp.HandleFunc {
+func (s *Service) getSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
-		request, ok := ctx.Value(requestKey).(*apiutils.SlackOAuthRequest)
+		request, ok := ctx.Value(requestKey).(*obj.SlackOAuthRequest)
 		if !ok {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		// Might need to pass state as well...
-		oaRequest := &apiutils.SlackOAuthRequest{
-			ClientID:     config.GetConfig().SlackTestClientID,
-			ClientSecret: config.GetConfig().SlackTestClientSecret,
+		oaRequest := &obj.SlackOAuthRequest{
+			ClientID:     config.GetConfig().SlackClientID,
+			ClientSecret: config.GetConfig().SlackClientSecret,
 			Code:         request.Code,
 			RedirectURI:  request.RedirectURI,
 		}
 
 		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
 		if err != nil {
-			return ctx, http.StatusInternalServerError, err
+			log.WithFields(log.Fields{"service": "getSlackCode", "error": err}).Error("Didn't get oauth response from slack.")
+			return oaResponse, http.StatusInternalServerError, err
 		}
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
+			log.WithFields(log.Fields{"service": "getSlackCode", "error": err}).Error("Couldn't put oauth response received from slack.")
 			return ctx, http.StatusInternalServerError, err
 		}
 

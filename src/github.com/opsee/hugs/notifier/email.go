@@ -2,7 +2,7 @@ package notifier
 
 import (
 	"github.com/keighl/mandrill"
-	"github.com/opsee/hugs/store"
+	"github.com/opsee/hugs/obj"
 )
 
 type EmailSender struct {
@@ -10,7 +10,7 @@ type EmailSender struct {
 	mailClient *mandrill.Client
 }
 
-func (es EmailSender) Send(n *store.Notification, e Event) error {
+func (es EmailSender) Send(n *obj.Notification, e Event) error {
 	templateName := "check-pass"
 	if e.FailCount > 0 {
 		templateName = "check-fail"

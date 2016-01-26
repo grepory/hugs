@@ -105,7 +105,7 @@ var swaggerMap = j{
 						"description": "",
 						"schema": j{
 							"items": j{
-								"$ref": "#/definitions/CheckNotifications",
+								"$ref": "#/definitions/Notifications",
 							},
 							"type": "array",
 						},
@@ -119,10 +119,10 @@ var swaggerMap = j{
 					j{
 						"description": "",
 						"in":          "body",
-						"name":        "CheckNotifications",
+						"name":        "Notifications",
 						"required":    true,
 						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+							"$ref": "#/definitions/Notifications",
 						},
 					},
 				},
@@ -130,7 +130,7 @@ var swaggerMap = j{
 					"200": j{
 						"description": "",
 						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+							"$ref": "#/definitions/Notifications",
 						},
 					},
 				},
@@ -173,7 +173,7 @@ var swaggerMap = j{
 					"200": j{
 						"description": "",
 						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+							"$ref": "#/definitions/Notifications",
 						},
 					},
 				},
@@ -186,10 +186,10 @@ var swaggerMap = j{
 					j{
 						"description": "",
 						"in":          "body",
-						"name":        "CheckNotifications",
+						"name":        "Notifications",
 						"required":    true,
 						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+							"$ref": "#/definitions/Notifications",
 						},
 					},
 					j{
@@ -204,7 +204,7 @@ var swaggerMap = j{
 					"200": j{
 						"description": "",
 						"schema": j{
-							"$ref": "#/definitions/CheckNotifications",
+							"$ref": "#/definitions/Notifications",
 						},
 					},
 				},
@@ -214,7 +214,7 @@ var swaggerMap = j{
 		},
 	},
 	"definitions": j{
-		"CheckNotifications": j{
+		"Notifications": j{
 			"properties": j{
 				"check-id": j{
 					"type": "string",
@@ -284,9 +284,15 @@ var swaggerMap = j{
 				"team_id": j{
 					"type": "string",
 				},
+				"ok": j{
+					"type": "bool",
+				},
+				"error": j{
+					"type": "string",
+				},
 			},
 			"required": k{
-				"access_token", "scope", "team_name", "team_id",
+				"access_token", "scope", "team_name", "team_id", "ok",
 			},
 			"type": "object",
 		},

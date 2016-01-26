@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/opsee/basic/com"
-	"github.com/opsee/hugs/apiutils"
+	"github.com/opsee/hugs/obj"
 	log "github.com/sirupsen/logrus"
 )
 
 type StoreTest struct {
 	DBStore       *Postgres
-	Notifications []*Notification
+	Notifications []*obj.Notification
 	User          *com.User
 }
 
@@ -36,8 +36,8 @@ func NewStoreTest() *StoreTest {
 	return &StoreTest{
 		DBStore: db,
 		User:    user,
-		Notifications: []*Notification{
-			&Notification{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
 				ID:         0,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -45,7 +45,7 @@ func NewStoreTest() *StoreTest {
 				Value:      "off",
 				Type:       "slack_bot",
 			},
-			&Notification{
+			&obj.Notification{
 				ID:         1,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -53,7 +53,7 @@ func NewStoreTest() *StoreTest {
 				Value:      "you",
 				Type:       "email",
 			},
-			&Notification{
+			&obj.Notification{
 				ID:         2,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -160,17 +160,17 @@ func TestStoreDeleteNotifications(t *testing.T) {
 }
 
 func TestStorePutSlackOAuthResponse(t *testing.T) {
-	slackOAuthResponse := &apiutils.SlackOAuthResponse{
+	slackOAuthResponse := &obj.SlackOAuthResponse{
 		AccessToken: "test",
 		Scope:       "test",
 		TeamName:    "test",
 		TeamID:      "test",
-		IncomingWebhook: &apiutils.SlackIncomingWebhook{
+		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
-		Bot: &apiutils.SlackBotCreds{
+		Bot: &obj.SlackBotCreds{
 			BotUserID:      "test",
 			BotAccessToken: "test",
 		},
@@ -184,17 +184,17 @@ func TestStorePutSlackOAuthResponse(t *testing.T) {
 }
 
 func TestStoreUpdateSlackOAuthResponse(t *testing.T) {
-	slackOAuthResponse := &apiutils.SlackOAuthResponse{
+	slackOAuthResponse := &obj.SlackOAuthResponse{
 		AccessToken: "test",
 		Scope:       "test",
 		TeamName:    "feck",
 		TeamID:      "test",
-		IncomingWebhook: &apiutils.SlackIncomingWebhook{
+		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
-		Bot: &apiutils.SlackBotCreds{
+		Bot: &obj.SlackBotCreds{
 			BotUserID:      "test",
 			BotAccessToken: "test",
 		},

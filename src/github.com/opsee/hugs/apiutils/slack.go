@@ -5,20 +5,28 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/opsee/hugs/obj"
+)
+
+// API endpoints
+const (
+	SlackOAuthEndpoint = "https://slack.com/api/oauth.access"
 )
 
 func StartSlackAPIEmulator() {
-	oaResponse := &SlackOAuthResponse{
+	oaResponse := &obj.SlackOAuthResponse{
 		AccessToken: "test",
 		Scope:       "test",
 		TeamName:    "test",
 		TeamID:      "test",
-		IncomingWebhook: &SlackIncomingWebhook{
+		OK:          true,
+		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
-		Bot: &SlackBotCreds{
+		Bot: &obj.SlackBotCreds{
 			BotUserID:      "test",
 			BotAccessToken: "test",
 		},
