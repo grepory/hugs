@@ -77,18 +77,22 @@ func (w *Worker) Work() {
 	}
 	message, err := w.SQS.ReceiveMessage(input)
 
-	if err != nil {
+	if err != nil || len(message.Messages) == 0 {
 		w.errCount += 1
 		log.Error(err)
 		if w.errCount >= w.errCountThreshold {
 			w.Stop()
 			return
 		}
-		log.WithFields(log.Fields{"worker": w.ID, "err": err}).Warn("Encountered error.  Sleeping...")
+		if err != nil {
+			log.WithFields(log.Fields{"worker": w.ID, "err": err}).Error("Encountered error.  Sleeping...")
+		}
 		time.Sleep((1 << uint(w.errCount+1)) * time.Millisecond * 10)
 		return
 	}
-	w.errCount = 0
+	if len(message.Messages) > 0 {
+		w.errCount = 0
+	}
 
 	// unmarshal sqs message json into events
 	for _, message := range message.Messages {
