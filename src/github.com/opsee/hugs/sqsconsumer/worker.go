@@ -79,9 +79,8 @@ func (w *Worker) Work() {
 
 	if err != nil || len(message.Messages) == 0 {
 		w.errCount += 1
-		log.Error(err)
 		if w.errCount >= w.errCountThreshold {
-			w.Stop()
+			w.errCount = w.errCountThreshold / 2
 			return
 		}
 		if err != nil {
