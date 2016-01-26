@@ -39,11 +39,12 @@ func (pg *Postgres) GetNotifications(user *com.User) ([]*Notification, error) {
 	for rows.Next() {
 		var notification Notification
 		err := rows.StructScan(&notification)
+
 		if err != nil {
-			log.Fatalln(err)
+			log.WithFields(log.Fields{"postgres": "GetNotifications", "user": user, "notification": notification, "err": err}).Error("Couldn't scan notification.")
+			return nil, err
 		}
 		notifications = append(notifications, &notification)
-		fmt.Printf("%#v\n", notification)
 	}
 
 	return notifications, err
@@ -58,29 +59,17 @@ func (pg *Postgres) UnsafeGetNotificationsByCheckID(checkID string) ([]*Notifica
 
 func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([]*Notification, error) {
 	notifications := []*Notification{}
-	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1", checkID)
-
-	// check to ensure that user matches returned notifications user
-	/*
-		if err == nil {
-			for _, notification := range notifications {
-				// TODO(dan) Also check CustomerID?
-				if notification.UserID != user.ID {
-					return nil, fmt.Errorf("UserID does not match Notification UserID")
-				}
-			}
-		}
-	*/
+	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1 AND customer_id = $2", checkID, user.CustomerID)
 
 	return notifications, err
 }
 
 func (pg *Postgres) PutNotifications(user *com.User, notifications []*Notification) error {
-	// TODO(dan) Should we return after the first error?
 	for _, notification := range notifications {
 		err := pg.PutNotification(user, notification)
 		if err != nil {
-			return err
+			log.WithFields(log.Fields{"postgres": "PutNotifications", "user": user, "notification": notification, "error": err}).Error("Couldn't put notification.")
+			return fmt.Errorf("Couldn't put notification.")
 		}
 	}
 	return nil
@@ -95,11 +84,9 @@ func (pg *Postgres) UnsafePutNotification(notification *Notification) error {
 }
 
 func (pg *Postgres) PutNotification(user *com.User, notification *Notification) error {
-	// TODO(dan) This is a little funky.  How do we know if a notification already exists??
-	if notification.UserID != user.ID {
-		return fmt.Errorf("User ID does not match Notification UserID")
+	if notification.CustomerID != user.CustomerID {
+		return fmt.Errorf("Customer ID does not match notification ID")
 	}
-
 	_, err := pg.db.NamedExec(
 		`insert into notifications (customer_id, user_id, check_id, value, type)
                  values (:customer_id, :user_id, :check_id, :value, :type)
@@ -108,16 +95,15 @@ func (pg *Postgres) PutNotification(user *com.User, notification *Notification) 
 }
 
 func (pg *Postgres) UpdateNotification(user *com.User, notification *Notification) error {
-	// Check to ensure notification in db has CustomerID that matches authenticated user
 	oldNotification := Notification{}
 	err := pg.db.Get(&oldNotification, "SELECT * from notifications WHERE customer_id=$1 AND id=$2", user.CustomerID, notification.ID)
 	if err != nil {
 		return err
 	}
 
-	// TODO(dan) Also check CustomerID?
-	if oldNotification.UserID != user.ID {
-		return fmt.Errorf("User is not allowed to modify this notification")
+	if oldNotification.CustomerID != user.CustomerID {
+		log.WithFields(log.Fields{"postgres": "UpdateNotification", "user": user, "notification": notification}).Error("user.CustomerID, notification.CustomerID mistmatch!")
+		return fmt.Errorf("Error: CustomerID associated with notification to be updated does not match CustomerID of requesting user.")
 	}
 
 	_, err = pg.db.Queryx(`UPDATE notifications SET check_id=$1, value=$2, type=$3 WHERE id=$4`,
@@ -127,35 +113,19 @@ func (pg *Postgres) UpdateNotification(user *com.User, notification *Notificatio
 }
 
 func (pg *Postgres) DeleteNotifications(user *com.User, notifications []*Notification) error {
-	// TODO(dan) Should we return after the first error?
 	for _, notification := range notifications {
 		err := pg.DeleteNotification(user, notification)
 		if err != nil {
-			return err
+			log.WithFields(log.Fields{"postgres": "DeleteNotifications", "user": user, "notification": notification, "error": err}).Error("Couldn't delete notification")
+			return fmt.Errorf("Couldn't delete notificaiton.")
 		}
 	}
+
 	return nil
 }
 
 func (pg *Postgres) DeleteNotification(user *com.User, notification *Notification) error {
-	// Check to ensure notification in db has CustomerID that matches authenticated user
-	oldNotification := Notification{}
-	err := pg.db.Get(&oldNotification, "SELECT * from notifications WHERE customer_id=$1 AND id=$2", user.CustomerID, notification.ID)
-	if err != nil {
-		return err
-	}
-
-	// TODO(dan) Also check CustomerID?
-	if notification.UserID != user.ID {
-		return fmt.Errorf("User is not allowed to modify this notification")
-	}
-
-	// TODO(dan) Get Notification and check actual UserID prior to deleting
-	if notification.UserID != user.ID {
-		return fmt.Errorf("User ID does not match Notification UserID")
-	}
-
-	_, err = pg.db.Queryx(`DELETE from notifications WHERE id=$1`, oldNotification.ID)
+	_, err := pg.db.Queryx(`DELETE from notifications WHERE id=$1 AND customer_id=$2`, notification.ID, user.CustomerID)
 	return err
 }
 
@@ -169,13 +139,12 @@ func (pg *Postgres) DeleteSlackOAuthResponsesByUser(user *com.User) error {
 	return err
 }
 
-// TODO(dan) decide whether we want to limit customer-ids to one slack integration
-// TODO(dan) right now we delete all of the existing responses prior to adding one
 func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
 	customer := Customer{}
 	err := pg.db.Get(&customer, "SELECT * from customers WHERE id=$1", user.CustomerID)
 
 	if customer.ID == "" {
+		log.WithFields(log.Fields{"postgres": "PutSlackOAuthResponse", "CustomerID": user}).Error("Adding new customer.")
 		pg.db.MustExec("INSERT INTO customers (id) VALUES ($1)", user.CustomerID)
 	}
 
@@ -184,7 +153,6 @@ func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuth
 		return err
 	}
 
-	// Ensure we only have one for right now
 	err = pg.DeleteSlackOAuthResponsesByUser(user)
 	if err != nil {
 		return err
@@ -199,8 +167,6 @@ func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuth
 	return err
 }
 
-// TODO(dan) Operating under the assumption that one token/user, this will return that one token
-// leaving the GetSlackOAuthReponses in case we allow more than one integration per customer
 func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*apiutils.SlackOAuthResponse, error) {
 	oaResponses, err := pg.GetSlackOAuthResponses(user)
 	if err != nil {
@@ -214,7 +180,6 @@ func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*apiutils.SlackOAuthR
 	return nil, nil
 }
 
-// TODO(dan) decide whether we want to limit customer-ids to one slack integration
 func (pg *Postgres) GetSlackOAuthResponses(user *com.User) ([]*apiutils.SlackOAuthResponse, error) {
 	oaResponses := []*apiutils.SlackOAuthResponse{}
 	rows, err := pg.db.Queryx("SELECT data from slack_oauth_responses WHERE customer_id = $1", user.CustomerID)
@@ -241,7 +206,6 @@ func (pg *Postgres) GetSlackOAuthResponses(user *com.User) ([]*apiutils.SlackOAu
 	return oaResponses, err
 }
 
-// TODO(dan) decide whether we want to limit customer-ids to one slack integration
 func (pg *Postgres) UpdateSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
 	datjson, err := json.Marshal(s)
 	if err != nil {
