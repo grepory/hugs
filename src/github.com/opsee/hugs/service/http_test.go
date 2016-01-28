@@ -16,6 +16,7 @@ import (
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/apiutils"
 	"github.com/opsee/hugs/config"
+	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +44,7 @@ func fuckitTest() {
 type ServiceTest struct {
 	Service       *Service
 	Router        *tp.Router
-	Notifications []*store.Notification
+	Notifications []*obj.Notification
 	User          *com.User
 	UserToken     string
 }
@@ -61,17 +62,17 @@ func NewServiceTest() *ServiceTest {
 	userAuthToken := GetUserAuthToken(user)
 
 	log.Info(userAuthToken)
-	log.Info("Connecting to local test store")
+	log.Info("Connecting to local test obj")
 	db, err := store.NewPostgres(os.Getenv("HUGS_POSTGRES_CONN"))
 	if err != nil {
 		panic(err)
 	}
 	log.Info(db)
-	//log.Info("Clearing local test store of notifications")
+	//log.Info("Clearing local test obj of notifications")
 	//err = db.DeleteNotificationsByUser(user)
 
 	if err != nil {
-		log.Warn("Warning: Couldn't clear local test store of notifications")
+		log.Warn("Warning: Couldn't clear local test obj of notifications")
 	}
 
 	service, err := NewService()
@@ -84,8 +85,8 @@ func NewServiceTest() *ServiceTest {
 		Router:    service.NewRouter(),
 		User:      user,
 		UserToken: userAuthToken,
-		Notifications: []*store.Notification{
-			&store.Notification{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
 				ID:         0,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -93,7 +94,7 @@ func NewServiceTest() *ServiceTest {
 				Value:      "C0ATUFZ7X", // this a channel
 				Type:       "slack_bot",
 			},
-			&store.Notification{
+			&obj.Notification{
 				ID:         1,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -101,7 +102,7 @@ func NewServiceTest() *ServiceTest {
 				Value:      "dan@opsee.com",
 				Type:       "email",
 			},
-			&store.Notification{
+			&obj.Notification{
 				ID:         2,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -116,24 +117,24 @@ func NewServiceTest() *ServiceTest {
 	log.Info("Starting slack api emulator...")
 	go apiutils.StartSlackAPIEmulator()
 
-	log.Info("Adding initial notifications to store...")
+	log.Info("Adding initial notifications to obj...")
 	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
 	if err != nil {
-		log.WithFields(log.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service store.")
+		log.WithFields(log.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service obj.")
 	}
 
-	log.Info("Adding initial slack oauth shit to store...")
-	slackOAuthResponse := &apiutils.SlackOAuthResponse{
+	log.Info("Adding initial slack oauth shit to obj...")
+	slackOAuthResponse := &obj.SlackOAuthResponse{
 		AccessToken: config.GetConfig().SlackTestToken,
 		Scope:       "bot",
 		TeamName:    "opsee",
 		TeamID:      "opsee",
-		IncomingWebhook: &apiutils.SlackIncomingWebhook{
+		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
-		Bot: &apiutils.SlackBotCreds{
+		Bot: &obj.SlackBotCreds{
 			BotUserID:      "test",
 			BotAccessToken: "test",
 		},
@@ -162,7 +163,7 @@ func TestGetNotifications(t *testing.T) {
 	Common.Service.router.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 
-	var resp CheckNotifications
+	var resp obj.Notifications
 
 	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
@@ -176,9 +177,9 @@ func TestGetNotifications(t *testing.T) {
 }
 
 func TestPostNotifications(t *testing.T) {
-	cn := &CheckNotifications{
-		Notifications: []*store.Notification{
-			&store.Notification{
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
 				ID:         0,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -219,7 +220,7 @@ func TestGetNotificationsByCheckID(t *testing.T) {
 	Common.Service.router.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 
-	var resp CheckNotifications
+	var resp obj.Notifications
 
 	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
@@ -232,9 +233,9 @@ func TestGetNotificationsByCheckID(t *testing.T) {
 }
 
 func TestPutNotification(t *testing.T) {
-	cn := &CheckNotifications{
-		Notifications: []*store.Notification{
-			&store.Notification{
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
 				ID:         3,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
@@ -276,7 +277,7 @@ func TestGetNotificationsByCheckID666(t *testing.T) {
 	Common.Service.router.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
 
-	var resp CheckNotifications
+	var resp obj.Notifications
 
 	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
@@ -330,7 +331,7 @@ func TestGetSlackToken(t *testing.T) {
 
 	Common.Service.router.ServeHTTP(rw, req)
 
-	var resp apiutils.SlackOAuthResponse
+	var resp obj.SlackOAuthResponse
 
 	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
@@ -343,7 +344,7 @@ func TestGetSlackToken(t *testing.T) {
 
 // Note that this should fail because code will be invalid.
 func TestPostSlackCode(t *testing.T) {
-	oar := &apiutils.SlackOAuthRequest{
+	oar := &obj.SlackOAuthRequest{
 		Code:        "test",
 		RedirectURI: "test",
 	}

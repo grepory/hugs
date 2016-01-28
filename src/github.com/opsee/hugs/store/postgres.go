@@ -12,7 +12,7 @@ import (
 	"github.com/jmoiron/sqlx/types"
 	_ "github.com/lib/pq"
 	"github.com/opsee/basic/com"
-	"github.com/opsee/hugs/apiutils"
+	"github.com/opsee/hugs/obj"
 )
 
 type Postgres struct {
@@ -33,11 +33,11 @@ func NewPostgres(connection string) (*Postgres, error) {
 	}, nil
 }
 
-func (pg *Postgres) GetNotifications(user *com.User) ([]*Notification, error) {
-	var notifications []*Notification
+func (pg *Postgres) GetNotifications(user *com.User) ([]*obj.Notification, error) {
+	var notifications []*obj.Notification
 	rows, err := pg.db.Queryx("SELECT * from notifications WHERE customer_id = $1", user.CustomerID)
 	for rows.Next() {
-		var notification Notification
+		var notification obj.Notification
 		err := rows.StructScan(&notification)
 
 		if err != nil {
@@ -50,21 +50,21 @@ func (pg *Postgres) GetNotifications(user *com.User) ([]*Notification, error) {
 	return notifications, err
 }
 
-func (pg *Postgres) UnsafeGetNotificationsByCheckID(checkID string) ([]*Notification, error) {
-	notifications := []*Notification{}
+func (pg *Postgres) UnsafeGetNotificationsByCheckID(checkID string) ([]*obj.Notification, error) {
+	notifications := []*obj.Notification{}
 	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1", checkID)
 
 	return notifications, err
 }
 
-func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([]*Notification, error) {
-	notifications := []*Notification{}
+func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([]*obj.Notification, error) {
+	notifications := []*obj.Notification{}
 	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1 AND customer_id = $2", checkID, user.CustomerID)
 
 	return notifications, err
 }
 
-func (pg *Postgres) PutNotifications(user *com.User, notifications []*Notification) error {
+func (pg *Postgres) PutNotifications(user *com.User, notifications []*obj.Notification) error {
 	for _, notification := range notifications {
 		err := pg.PutNotification(user, notification)
 		if err != nil {
@@ -75,7 +75,7 @@ func (pg *Postgres) PutNotifications(user *com.User, notifications []*Notificati
 	return nil
 }
 
-func (pg *Postgres) UnsafePutNotification(notification *Notification) error {
+func (pg *Postgres) UnsafePutNotification(notification *obj.Notification) error {
 	_, err := pg.db.NamedExec(
 		`insert into notifications (customer_id, user_id, check_id, value, type)
                  values (:customer_id, :user_id, :check_id, :value, :type)
@@ -83,7 +83,7 @@ func (pg *Postgres) UnsafePutNotification(notification *Notification) error {
 	return err
 }
 
-func (pg *Postgres) PutNotification(user *com.User, notification *Notification) error {
+func (pg *Postgres) PutNotification(user *com.User, notification *obj.Notification) error {
 	if notification.CustomerID != user.CustomerID {
 		return fmt.Errorf("Customer ID does not match notification ID")
 	}
@@ -94,8 +94,8 @@ func (pg *Postgres) PutNotification(user *com.User, notification *Notification) 
 	return err
 }
 
-func (pg *Postgres) UpdateNotification(user *com.User, notification *Notification) error {
-	oldNotification := Notification{}
+func (pg *Postgres) UpdateNotification(user *com.User, notification *obj.Notification) error {
+	oldNotification := obj.Notification{}
 	err := pg.db.Get(&oldNotification, "SELECT * from notifications WHERE customer_id=$1 AND id=$2", user.CustomerID, notification.ID)
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func (pg *Postgres) UpdateNotification(user *com.User, notification *Notificatio
 	return err
 }
 
-func (pg *Postgres) DeleteNotifications(user *com.User, notifications []*Notification) error {
+func (pg *Postgres) DeleteNotifications(user *com.User, notifications []*obj.Notification) error {
 	for _, notification := range notifications {
 		err := pg.DeleteNotification(user, notification)
 		if err != nil {
@@ -124,7 +124,7 @@ func (pg *Postgres) DeleteNotifications(user *com.User, notifications []*Notific
 	return nil
 }
 
-func (pg *Postgres) DeleteNotification(user *com.User, notification *Notification) error {
+func (pg *Postgres) DeleteNotification(user *com.User, notification *obj.Notification) error {
 	_, err := pg.db.Queryx(`DELETE from notifications WHERE id=$1 AND customer_id=$2`, notification.ID, user.CustomerID)
 	return err
 }
@@ -139,8 +139,8 @@ func (pg *Postgres) DeleteSlackOAuthResponsesByUser(user *com.User) error {
 	return err
 }
 
-func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
-	customer := Customer{}
+func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *obj.SlackOAuthResponse) error {
+	customer := obj.Customer{}
 	err := pg.db.Get(&customer, "SELECT * from customers WHERE id=$1", user.CustomerID)
 
 	if customer.ID == "" {
@@ -158,7 +158,7 @@ func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuth
 		return err
 	}
 
-	wrapper := SlackOAuthResponseDBWrapper{
+	wrapper := obj.SlackOAuthResponseDBWrapper{
 		CustomerID: user.CustomerID,
 		Data:       types.JSONText(string(datjson)),
 	}
@@ -167,7 +167,7 @@ func (pg *Postgres) PutSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuth
 	return err
 }
 
-func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*apiutils.SlackOAuthResponse, error) {
+func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*obj.SlackOAuthResponse, error) {
 	oaResponses, err := pg.GetSlackOAuthResponses(user)
 	if err != nil {
 		return nil, err
@@ -180,21 +180,21 @@ func (pg *Postgres) GetSlackOAuthResponse(user *com.User) (*apiutils.SlackOAuthR
 	return nil, nil
 }
 
-func (pg *Postgres) GetSlackOAuthResponses(user *com.User) ([]*apiutils.SlackOAuthResponse, error) {
-	oaResponses := []*apiutils.SlackOAuthResponse{}
+func (pg *Postgres) GetSlackOAuthResponses(user *com.User) ([]*obj.SlackOAuthResponse, error) {
+	oaResponses := []*obj.SlackOAuthResponse{}
 	rows, err := pg.db.Queryx("SELECT data from slack_oauth_responses WHERE customer_id = $1", user.CustomerID)
 	if err != nil {
 		return oaResponses, err
 	}
 
 	for rows.Next() {
-		var wrappedOAResponse SlackOAuthResponseDBWrapper
+		var wrappedOAResponse obj.SlackOAuthResponseDBWrapper
 		err := rows.StructScan(&wrappedOAResponse)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		oaResponse := apiutils.SlackOAuthResponse{}
+		oaResponse := obj.SlackOAuthResponse{}
 		err = wrappedOAResponse.Data.Unmarshal(&oaResponse)
 		if err != nil {
 			continue
@@ -206,7 +206,7 @@ func (pg *Postgres) GetSlackOAuthResponses(user *com.User) ([]*apiutils.SlackOAu
 	return oaResponses, err
 }
 
-func (pg *Postgres) UpdateSlackOAuthResponse(user *com.User, s *apiutils.SlackOAuthResponse) error {
+func (pg *Postgres) UpdateSlackOAuthResponse(user *com.User, s *obj.SlackOAuthResponse) error {
 	datjson, err := json.Marshal(s)
 	if err != nil {
 		return err

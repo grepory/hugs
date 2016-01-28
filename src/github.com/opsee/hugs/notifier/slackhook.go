@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/hoisie/mustache"
-	"github.com/opsee/hugs/store"
+	"github.com/opsee/hugs/obj"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
 )
 
@@ -15,7 +15,7 @@ type SlackHookSender struct {
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
-func (this *SlackHookSender) Send(n *store.Notification, e Event) error {
+func (this *SlackHookSender) Send(n *obj.Notification, e Event) error {
 
 	templateKey := "check-passing"
 	if e.FailCount > 0 {

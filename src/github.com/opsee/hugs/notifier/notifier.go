@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/opsee/hugs/config"
-	"github.com/opsee/hugs/store"
+	"github.com/opsee/hugs/obj"
 )
 
 // Interface implemented by everything that wants to send notifications
 type Sender interface {
-	Send(n *store.Notification, e Event) error
+	Send(n *obj.Notification, e Event) error
 }
 
 // A notifier is a map of Senders
@@ -63,7 +63,7 @@ func (n Notifier) getSender(t string) (Sender, error) {
 }
 
 // A Send should require only a notification (userID, type, value) and Event (check info)
-func (n Notifier) Send(notification *store.Notification, event Event) error {
+func (n Notifier) Send(notification *obj.Notification, event Event) error {
 	sender, err := n.getSender(notification.Type)
 	if err == nil {
 		return sender.Send(notification, event)
