@@ -29,7 +29,7 @@ type Config struct {
 	LogLevel              string
 	SlackClientSecret     string `required:"true"`
 	SlackClientID         string `required:"true"`
-	SlackTestToken        string `required:"true"`
+	SlackTestToken        string
 	SlackTestClientSecret string
 	SlackTestClientID     string
 	AWSSession            *session.Session
