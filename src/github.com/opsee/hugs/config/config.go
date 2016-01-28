@@ -103,7 +103,7 @@ func GetConfig() *Config {
 			PublicHost:            os.Getenv("HUGS_HOST"),
 			PostgresConn:          os.Getenv("HUGS_POSTGRES_CONN"),
 			SqsUrl:                os.Getenv("HUGS_SQS_URL"),
-			AWSRegion:             os.Getenv("AWS_REGION"),
+			AWSRegion:             os.Getenv("HUGS_AWS_REGION"),
 			OpseeHost:             os.Getenv("HUGS_OPSEE_HOST"),
 			MandrillApiKey:        os.Getenv("HUGS_MANDRILL_API_KEY"),
 			VapeEndpoint:          os.Getenv("HUGS_VAPE_ENDPOINT"),
