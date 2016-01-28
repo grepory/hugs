@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/notifier"
+	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -100,10 +101,10 @@ func (w *Worker) Work() {
 		}
 
 		bodyBytes := []byte(*message.Body)
-		event := notifier.Event{}
+		event := obj.Event{}
 		json.Unmarshal(bodyBytes, &event)
 
-		if ok := event.Validate(); ok {
+		if err := event.Validate(); err == nil {
 			notifications, err := w.Store.UnsafeGetNotificationsByCheckID(event.CheckID)
 			if err != nil {
 				//TODO(dan) send message back to sqs if you can't get notifications

@@ -59,10 +59,9 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
 	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
-
-	//TODO(dan) This uses a decoder func that's not been committed to basic!
-	// NOTE!
 	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
+
+	rtr.Handle("GET", "/services/slack/test/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCodeTest())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -85,7 +84,7 @@ func (s *Service) getNotifications() tp.HandleFunc {
 		notifications, err := s.db.GetNotifications(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getNotifications", "error": err}).Error("Couldn't get notifications from database.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		response := &obj.Notifications{Notifications: notifications}
@@ -109,7 +108,7 @@ func (s *Service) postNotifications() tp.HandleFunc {
 		err := s.db.PutNotifications(user, request.Notifications)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Couldn't put notifications in database.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return ctx, http.StatusOK, nil
@@ -138,7 +137,7 @@ func (s *Service) deleteNotificationsByCheckID() tp.HandleFunc {
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 		err = s.db.DeleteNotifications(user, notifications)
 		if err != nil {
@@ -210,7 +209,7 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 
 		err := s.db.PutNotifications(user, request.Notifications)
 		if err != nil {
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return nil, http.StatusOK, nil
@@ -243,17 +242,17 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't get oauth response from slack.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		if err = oaResponse.Validate(); err != nil {
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't write slack oauth response to database.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return oaResponse, http.StatusOK, nil
@@ -272,17 +271,17 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Didn't get oauth response from database.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
-		if oaResponse == nil {
+		if oaResponse == nil || oaResponse.Bot == nil {
 			return ctx, http.StatusNotFound, nil
 		}
 
-		api := slack.New(oaResponse.AccessToken)
+		api := slack.New(oaResponse.Bot.BotAccessToken)
 		channels, err := api.GetChannels(true)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Couldn't get channels from slack.")
-			return ctx, http.StatusInternalServerError, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		respChannels := []*obj.SlackChannel{}
@@ -345,7 +344,46 @@ func (s *Service) getSlackCode() tp.HandleFunc {
 		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackCode", "error": err}).Error("Didn't get oauth response from slack.")
-			return oaResponse, http.StatusInternalServerError, err
+			return oaResponse, http.StatusBadRequest, err
+		}
+
+		// only insert the new oauth token if it's OK
+		if oaResponse.OK {
+			err = s.db.PutSlackOAuthResponse(user, oaResponse)
+			if err != nil {
+				log.WithFields(log.Fields{"service": "getSlackCode", "error": err}).Error("Couldn't put oauth response received from slack.")
+				return ctx, http.StatusInternalServerError, err
+			}
+		}
+
+		return oaResponse, http.StatusOK, nil
+	}
+}
+
+// get code from GET params and return token
+func (s *Service) getSlackCodeTest() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+		request, ok := ctx.Value(requestKey).(*obj.SlackOAuthRequest)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		// Might need to pass state as well...
+		oaRequest := &obj.SlackOAuthRequest{
+			ClientID:     config.GetConfig().SlackTestClientID,
+			ClientSecret: config.GetConfig().SlackTestClientSecret,
+			Code:         request.Code,
+			RedirectURI:  request.RedirectURI,
+		}
+
+		oaResponse, err := oaRequest.Do(apiutils.SlackOAuthEndpoint)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "getSlackCode", "error": err}).Error("Didn't get oauth response from slack.")
+			return oaResponse, http.StatusBadRequest, err
 		}
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)

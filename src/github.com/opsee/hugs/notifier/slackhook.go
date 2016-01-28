@@ -15,7 +15,7 @@ type SlackHookSender struct {
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
-func (this *SlackHookSender) Send(n *obj.Notification, e Event) error {
+func (this *SlackHookSender) Send(n *obj.Notification, e obj.Event) error {
 
 	templateKey := "check-passing"
 	if e.FailCount > 0 {

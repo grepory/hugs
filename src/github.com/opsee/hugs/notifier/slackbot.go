@@ -12,7 +12,7 @@ type SlackBotSender struct {
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
-func (this SlackBotSender) Send(n *obj.Notification, e Event) error {
+func (this SlackBotSender) Send(n *obj.Notification, e obj.Event) error {
 	passing := "passing"
 	if e.FailCount > 0 {
 		passing = "failing"

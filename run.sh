@@ -11,4 +11,4 @@ eval "$(< /ec2env)"
 
 source /$APPENV && \
 	/opt/bin/migrate -url "$HUGS_POSTGRES_CONN" -path /migrations up && \
-	/hugs
+	/hugs-linux-amd64
