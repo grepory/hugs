@@ -85,7 +85,7 @@ type SlackOAuthRequest struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	Code         string `json:"code" required:"true"`
-	RedirectURI  string `json:"redirect_uri" required:"true"`
+	RedirectURI  string `json:"redirect_uri"`
 }
 
 func (this *SlackOAuthRequest) Validate() error {

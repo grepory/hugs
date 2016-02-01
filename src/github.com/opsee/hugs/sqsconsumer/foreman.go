@@ -110,7 +110,8 @@ func (foreman *Foreman) safeWorkEstimate(count int) int {
 
 // calculate target worker count from estimated load
 func (foreman *Foreman) ComputeWorkerTarget(load int64) int64 {
-	est := int64(math.Pow(math.Log(float64(load)), 2.5))
+	// ranges from 1 worker for load 2 to 25 for workload of 10000
+	est := int64(math.Pow(math.Log(float64(load)), 1.25))
 	return foreman.safeTargetWorkerCount(est)
 }
 
@@ -120,6 +121,7 @@ func (foreman *Foreman) EstimateWork() {
 	if err != nil {
 		log.WithFields(log.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't get SQS Queue Attributes.")
 	}
+
 	count = foreman.safeWorkEstimate(count)
 	sma := foreman.computeJobCountSMA(count)
 	foreman.TargetWorkerCount = foreman.ComputeWorkerTarget(int64(sma))

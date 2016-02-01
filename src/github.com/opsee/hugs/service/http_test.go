@@ -316,7 +316,6 @@ func TestGetSlackChannels(t *testing.T) {
 	Common.Service.router.ServeHTTP(rw, req)
 	log.WithFields(log.Fields{"TestGetSlackChannels": "Got channel list."}).Info(rw.Body)
 
-	assert.Equal(t, http.StatusOK, rw.Code)
 }
 
 func TestGetSlackToken(t *testing.T) {
@@ -365,5 +364,5 @@ func TestPostSlackCode(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
-	assert.Equal(t, http.StatusInternalServerError, rw.Code)
+	assert.Equal(t, http.StatusBadRequest, rw.Code)
 }

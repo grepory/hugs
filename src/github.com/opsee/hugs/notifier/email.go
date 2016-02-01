@@ -10,7 +10,7 @@ type EmailSender struct {
 	mailClient *mandrill.Client
 }
 
-func (es EmailSender) Send(n *obj.Notification, e Event) error {
+func (es EmailSender) Send(n *obj.Notification, e obj.Event) error {
 	templateName := "check-pass"
 	if e.FailCount > 0 {
 		templateName = "check-fail"

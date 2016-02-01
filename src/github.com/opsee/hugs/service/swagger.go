@@ -23,7 +23,52 @@ var swaggerMap = j{
 						"type":        "string",
 					},
 					j{
+						"description": "Slack redirect_uri.",
+						"in":          "query",
+						"name":        "redirect_uri",
+						"required":    false,
+						"type":        "string",
+					},
+					j{
 						"description": "Slack authorization state.",
+						"in":          "query",
+						"name":        "state",
+						"required":    false,
+						"type":        "string",
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthResponse",
+						},
+					},
+				},
+				"summary": "Retrieves a test code.",
+				"tags":    k{"token"},
+			},
+		},
+
+		"/services/slack/test/code": j{
+			"get": j{
+				"parameters": []j{
+					j{
+						"description": "Slack authorization code.",
+						"in":          "query",
+						"name":        "code",
+						"required":    true,
+						"type":        "string",
+					},
+					j{
+						"description": "slack redirect_uri.",
+						"in":          "query",
+						"name":        "redirect_uri",
+						"required":    false,
+						"type":        "string",
+					},
+					j{
+						"description": "slack authorization state.",
 						"in":          "query",
 						"name":        "state",
 						"required":    false,

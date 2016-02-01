@@ -18,6 +18,6 @@ func main() {
 	}()
 
 	log.Info("Starting SQS Consumer with ", config.GetConfig().MinWorkers, " workers (", config.GetConfig().MaxWorkers, " max).")
-	foreman := sqsconsumer.NewForeman(0, 15, 10, config.GetConfig().MaxWorkers, config.GetConfig().MinWorkers, config.GetConfig().SqsUrl, config.GetConfig().PostgresConn)
+	foreman := sqsconsumer.NewForeman(0, 15, 2, config.GetConfig().MaxWorkers, config.GetConfig().MinWorkers, config.GetConfig().SqsUrl, config.GetConfig().PostgresConn)
 	foreman.Start()
 }

@@ -13,7 +13,6 @@ type Validatable interface {
 
 type Validator struct{}
 
-// TODO(dan) validate fields recursively.  rn we only validate top level fields.
 func (this *Validator) Validate(caller Validatable) error {
 	v := reflect.ValueOf(caller).Elem()
 	missing := []string{}
