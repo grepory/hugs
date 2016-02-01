@@ -338,7 +338,7 @@ func TestGetSlackToken(t *testing.T) {
 	}
 
 	log.WithFields(log.Fields{"TestGetSlackToken": "Got slack token."}).Info(resp)
-	assert.Equal(t, http.StatusOK, rw.Code)
+	assert.Equal(t, http.StatusNotFound, rw.Code)
 }
 
 // Note that this should fail because code will be invalid.

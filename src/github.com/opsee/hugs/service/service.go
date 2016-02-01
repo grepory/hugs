@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -300,7 +301,7 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 	}
 }
 
-// Fetch slack token from database
+// Fetch slack token from database, check to see if the token is active
 func (s *Service) getSlackToken() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
@@ -313,8 +314,18 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 			log.WithFields(log.Fields{"service": "getSlackToken", "error": err}).Error("Didn't get oauth response from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
-		if oaResponse == nil {
-			return ctx, http.StatusNotFound, nil
+
+		// TODO(dan) need to handle inactive tokens differently for slack bots vs webhooks.
+		// For now let's assume that we require a bot token
+		if oaResponse == nil || oaResponse.Bot == nil {
+			return ctx, http.StatusNotFound, fmt.Errorf("integration_inactive")
+		}
+
+		// confirm that the token is good
+		api := slack.New(oaResponse.Bot.BotAccessToken)
+		_, err = api.AuthTest()
+		if err != nil {
+			return ctx, http.StatusNotFound, fmt.Errorf("integration_inactive")
 		}
 
 		return oaResponse, http.StatusOK, nil
