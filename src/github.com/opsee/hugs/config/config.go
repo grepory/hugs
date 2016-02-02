@@ -33,6 +33,8 @@ type Config struct {
 	SlackTestClientSecret string
 	SlackTestClientID     string
 	AWSSession            *session.Session
+	NotificaptionEndpoint string
+	BartnetEndpoint       string
 }
 
 func (this *Config) Validate() error {
@@ -114,6 +116,8 @@ func GetConfig() *Config {
 			SlackTestToken:        os.Getenv("HUGS_TEST_SLACK_TOKEN"),
 			SlackTestClientID:     os.Getenv("HUGS_TEST_SLACK_CLIENT_ID"),
 			SlackTestClientSecret: os.Getenv("HUGS_TEST_SLACK_CLIENT_SECRET"),
+			NotificaptionEndpoint: os.Getenv("HUGS_NOTIFICAPTION_ENDPOINT"),
+			BartnetEndpoint:       os.Getenv("HUGS_BARTNET_ENDPOINT"),
 			MaxWorkers:            maxWorkers,
 			MinWorkers:            minWorkers,
 		}

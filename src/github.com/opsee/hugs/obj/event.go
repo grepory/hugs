@@ -1,14 +1,18 @@
 package obj
 
-import "github.com/opsee/hugs/util"
+import (
+	"github.com/opsee/hugs/checker"
+	"github.com/opsee/hugs/util"
+)
+
+type NocapResponse struct {
+	Images  map[string]string `json:"images"`
+	JSONUrl string            `json:"json_url"`
+}
 
 type Event struct {
-	CheckID       string `json:"check_id" required:"true"`
-	CheckName     string `json:"check_name" required:"true"`
-	GroupID       string `json:"group_id" required:"true"`
-	FirstResponse string `json:"first_response" required:"true"`
-	InstanceCount int    `json:"instance_count" `
-	FailCount     int    `json:"fail_count" required:"true"`
+	Result *checker.CheckResult
+	Nocap  *NocapResponse
 }
 
 func (this *Event) Validate() error {
