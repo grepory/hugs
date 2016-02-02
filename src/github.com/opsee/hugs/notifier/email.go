@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/keighl/mandrill"
+	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/obj"
 )
 
@@ -28,14 +29,24 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	if len(failingResponses) < 1 && !result.Passing {
 		return errors.New("Received failing CheckResult with no failing responses.")
 	}
+	failingInstances := []*checker.Target{}
+	for _, resp := range failingResponses {
+		failingInstances = append(failingInstances, resp.Target)
+	}
 
 	templateContent := map[string]interface{}{
 		"check_id":       result.CheckId,
 		"check_name":     result.CheckName,
 		"group_id":       result.Target.Id,
+		"group_name":     result.Target.Id,
 		"first_response": failingResponses[0],
 		"instance_count": len(result.Responses),
+		"instances":      failingInstances,
 		"fail_count":     len(failingResponses),
+	}
+
+	if result.Target.Name != "" {
+		templateContent["group_name"] = result.Target.Name
 	}
 
 	if e.Nocap != nil {
