@@ -50,41 +50,28 @@ var swaggerMap = j{
 			},
 		},
 
-		"/services/slack/test/code": j{
-			"get": j{
+		"/services/slack/test": j{
+			"post": j{
 				"parameters": []j{
 					j{
-						"description": "Slack authorization code.",
-						"in":          "query",
-						"name":        "code",
-						"required":    true,
-						"type":        "string",
-					},
-					j{
-						"description": "slack redirect_uri.",
-						"in":          "query",
-						"name":        "redirect_uri",
-						"required":    false,
-						"type":        "string",
-					},
-					j{
-						"description": "slack authorization state.",
-						"in":          "query",
-						"name":        "state",
-						"required":    false,
-						"type":        "string",
-					},
-				},
-				"responses": j{
-					"200": j{
 						"description": "",
+						"in":          "body",
+						"name":        "Notifications",
+						"required":    true,
 						"schema": j{
-							"$ref": "#/definitions/SlackOAuthResponse",
+							"$ref": "#/definitions/Notifications",
 						},
 					},
 				},
-				"summary": "Retrieves a test code.",
-				"tags":    k{"token"},
+
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema":      j{},
+					},
+				},
+				"summary": "Test alert on a notification",
+				"tags":    k{"notifications"},
 			},
 		},
 

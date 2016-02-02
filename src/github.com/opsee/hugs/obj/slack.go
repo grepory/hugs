@@ -2,12 +2,22 @@ package obj
 
 import (
 	"encoding/json"
+	"html"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/jmoiron/sqlx/types"
+	"github.com/nlopes/slack"
 	"github.com/opsee/hugs/util"
 )
+
+// helper message to escape
+func escapeMessage(message string) string {
+	message = html.UnescapeString(message)
+	replacer := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
+	return replacer.Replace(message)
+}
 
 type SlackChannel struct {
 	ID   string `json:"id" required:"true"`
@@ -32,6 +42,11 @@ func (this *SlackChannels) Validate() error {
 	return nil
 }
 
+type SlackResponse struct {
+	OK    bool   `json:"ok" db:"ok"`
+	Error string `json:"error" db:"error"`
+}
+
 type SlackOAuthResponseDBWrapper struct {
 	ID         int            `json:"id" db:"id"`
 	CustomerID string         `json:"customer_id" db:"customer_id" required:"true"`
@@ -51,8 +66,7 @@ type SlackOAuthResponse struct {
 	TeamID          string                `json:"team_id" db:"team_id"`
 	IncomingWebhook *SlackIncomingWebhook `json:"incoming_webhook" db:"incoming_webhook"`
 	Bot             *SlackBotCreds        `json:"bot" db:"bot"`
-	OK              bool                  `json:"ok" db:"ok"`
-	Error           string                `json:"error" db:"error"`
+	SlackResponse
 }
 
 func (this *SlackOAuthResponse) Validate() error {
@@ -114,6 +128,69 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 	}
 
 	slackResponse := &SlackOAuthResponse{}
+
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&slackResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return slackResponse, nil
+}
+
+type SlackPostChatMessageRequest struct {
+	Token       string             `json:"token"`
+	Channel     string             `json:"channel"`
+	Text        string             `json:"text"`
+	Username    string             `json:"username"`
+	AsUser      bool               `json:"as_user"`
+	Parse       string             `json:"parse"`
+	LinkNames   int                `json:"link_names"`
+	Attachments []slack.Attachment `json:"attachments"`
+	UnfurlLinks bool               `json:"unfurl_links"`
+	UnfurlMedia bool               `json:"unfurl_media"`
+	IconURL     string             `json:"icon_url"`
+	IconEmoji   string             `json:"icon_emoji"`
+	Markdown    bool               `json:"mrkdwn,omitempty"`
+	EscapeText  bool               `json:"escape_text"`
+}
+
+type SlackPostChatMessageResponse struct {
+	SlackResponse
+}
+
+func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMessageResponse, error) {
+	/*
+		https://slack.com/api/chat.postMessage
+	*/
+	values := url.Values{
+		"token":   {this.Token},
+		"channel": {this.Channel},
+	}
+
+	values.Set("username", string(this.Username))
+	values.Set("as_user", "false")
+	if this.Attachments != nil {
+		attachments, err := json.Marshal(this.Attachments)
+		if err != nil {
+			return nil, err
+		}
+		values.Set("attachments", string(attachments))
+	}
+	values.Set("icon_url", this.IconURL)
+	values.Set("text", escapeMessage(this.Text))
+	values.Set("parse", "full")
+	//values.Set("unfurl_links", "true")
+	//values.Set("unfurl_media", "false")
+	//values.Set("icon_emoji", this.IconEmoji)
+	//values.Set("escape_text", "false")
+
+	resp, err := http.PostForm(endpoint, values)
+	if err != nil {
+		return nil, err
+	}
+
+	slackResponse := &SlackPostChatMessageResponse{}
 
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&slackResponse)
