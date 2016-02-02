@@ -2,6 +2,7 @@ package sqsconsumer
 
 import (
 	"encoding/json"
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +13,12 @@ import (
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	httpClient = &http.Client{
+		Timeout: 15 * time.Second,
+	}
 )
 
 type Worker struct {
@@ -101,30 +108,33 @@ func (w *Worker) Work() {
 		}
 
 		bodyBytes := []byte(*message.Body)
-		event := &checker.CheckResult{}
-		err := json.Unmarshal(bodyBytes, event)
+		result := &checker.CheckResult{}
+		err := json.Unmarshal(bodyBytes, result)
 		if err != nil {
 			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot unmarshal message body")
 			continue
 		}
 
-		if len(event.Responses) < 1 {
-			log.WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("No responses found in event")
-			continue
-		}
-
-		notifications, err := w.Store.UnsafeGetNotificationsByCheckID(event.CheckId)
+		notifications, err := w.Store.UnsafeGetNotificationsByCheckID(result.CheckId)
 		if err != nil {
 			//TODO(dan) send message back to sqs if you can't get notifications
 			// OR send notification to seperate SQS queue for redelivery
 			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: Couldn't get notifications for event.")
-		} else {
-			for _, notification := range notifications {
-				// Send notification with Notifier
-				sendErr := w.Notifier.Send(notification, event)
-				if sendErr != nil {
-					log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
-				}
+			continue
+		}
+
+		if len(notifications) < 1 {
+			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: No notifications for event.")
+			continue
+		}
+
+		event := buildEvent(notifications[0], result)
+
+		for _, notification := range notifications {
+			// Send notification with Notifier
+			sendErr := w.Notifier.Send(notification, event)
+			if sendErr != nil {
+				log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
 			}
 		}
 	}

@@ -10,4 +10,3 @@ postgres:
     - DB_USER=postgres
     - DB_PASS=postgres
     - DB_NAME=hugs_test
-  container_name: postgres

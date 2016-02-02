@@ -2,7 +2,7 @@ APPENV := testenv
 
 build: fmt $(APPENV)
 	docker run \
-		--link postgres:postgres \
+		--link hugs_postgres_1:postgres \
 		--env-file ./$(APPENV) \
 		-e "TARGETS=linux/amd64" \
 		-v `pwd`:/build \

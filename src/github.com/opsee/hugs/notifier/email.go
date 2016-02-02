@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/keighl/mandrill"
-	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/obj"
 )
 
@@ -13,40 +12,49 @@ type EmailSender struct {
 	mailClient *mandrill.Client
 }
 
-func (es EmailSender) Send(n *obj.Notification, e *checker.CheckResult) error {
-	templateName := "check-pass"
-	if !e.Passing {
-		templateName = "check-fail"
-	}
+func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
+	result := e.Result
+	var (
+		templateName string
+	)
 
-	failCount := 0
-	var firstFailingResponse *checker.CheckResponse
-
-	for i := 0; i < len(e.Responses); i++ {
-		if !e.Responses[i].Passing {
-			failCount += 1
-			if firstFailingResponse == nil {
-				firstFailingResponse = e.Responses[i]
-			}
-		}
-	}
+	failingResponses := result.FailingResponses()
 
 	// It's a possible error state that if the CheckResult.Passing field is false,
 	// i.e. this is a failing event, that there are somehow no constituent failing
 	// CheckResponse objects contained within the CheckResult. We cannot know _why_
 	// these CheckResponse objects aren't failing. Because we cannot ordain the reason
 	// for this error state, let us first err on the side of not bugging a customer.
-	if firstFailingResponse == nil && !e.Passing {
+	if len(failingResponses) < 1 && !result.Passing {
 		return errors.New("Received failing CheckResult with no failing responses.")
 	}
 
 	templateContent := map[string]interface{}{
-		"check_id":       e.CheckId,
-		"check_name":     e.CheckName,
-		"group_id":       e.Target.Id,
-		"first_response": firstFailingResponse,
-		"instance_count": len(e.Responses),
-		"fail_count":     failCount,
+		"check_id":       result.CheckId,
+		"check_name":     result.CheckName,
+		"group_id":       result.Target.Id,
+		"first_response": failingResponses[0],
+		"instance_count": len(result.Responses),
+		"fail_count":     len(failingResponses),
+	}
+
+	if e.Nocap != nil {
+		nocap := e.Nocap
+		templateContent["json_url"] = nocap.JSONUrl
+		// TODO(greg): The images will have sizes in nocap response soon.
+		templateContent["img_400"] = nocap.Images["default"]
+		templateContent["img_400"] = nocap.Images["default"]
+		if result.Passing {
+			templateName = "check-pass-image"
+		} else {
+			templateName = "check-fail-image"
+		}
+	} else {
+		if result.Passing {
+			templateName = "check-pass"
+		} else {
+			templateName = "check-fail"
+		}
 	}
 
 	mergeVars := make(map[string]interface{})
