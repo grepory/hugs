@@ -7,9 +7,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/notifier"
-	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
 )
@@ -54,8 +54,7 @@ func NewWorker(site *Site) (*Worker, error) {
 func (w *Worker) Start() {
 	go func() {
 		w.Site.WorkerPool <- w.CommandChan
-		atomic.AddInt64(w.Site.CurrentWorkerCount, 1)
-		w.ID = atomic.LoadInt64(w.Site.CurrentWorkerCount)
+		w.ID = atomic.AddInt64(w.Site.CurrentWorkerCount, 1)
 		for {
 			select {
 			case command := <-w.CommandChan:
@@ -71,6 +70,7 @@ func (w *Worker) Start() {
 	}()
 }
 
+// TODO(greg): We need to be deleting messages from the queue. As it stands, we're just requeueing them over and over again.
 func (w *Worker) Work() {
 	input := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(w.Site.QueueUrl),
@@ -101,26 +101,31 @@ func (w *Worker) Work() {
 		}
 
 		bodyBytes := []byte(*message.Body)
-		event := obj.Event{}
-		json.Unmarshal(bodyBytes, &event)
+		event := &checker.CheckResult{}
+		err := json.Unmarshal(bodyBytes, event)
+		if err != nil {
+			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot unmarshal message body")
+			continue
+		}
 
-		if err := event.Validate(); err == nil {
-			notifications, err := w.Store.UnsafeGetNotificationsByCheckID(event.CheckID)
-			if err != nil {
-				//TODO(dan) send message back to sqs if you can't get notifications
-				// OR send notification to seperate SQS queue for redelivery
-				log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: Couldn't get notifications for event.")
-			} else {
-				for _, notification := range notifications {
-					// Send notification with Notifier
-					sendErr := w.Notifier.Send(notification, event)
-					if sendErr != nil {
-						log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
-					}
+		if len(event.Responses) < 1 {
+			log.WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("No responses found in event")
+			continue
+		}
+
+		notifications, err := w.Store.UnsafeGetNotificationsByCheckID(event.CheckId)
+		if err != nil {
+			//TODO(dan) send message back to sqs if you can't get notifications
+			// OR send notification to seperate SQS queue for redelivery
+			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: Couldn't get notifications for event.")
+		} else {
+			for _, notification := range notifications {
+				// Send notification with Notifier
+				sendErr := w.Notifier.Send(notification, event)
+				if sendErr != nil {
+					log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
 				}
 			}
-		} else {
-			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: event failed validation.")
 		}
 	}
 }
