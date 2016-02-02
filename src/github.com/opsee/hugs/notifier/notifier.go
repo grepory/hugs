@@ -2,14 +2,23 @@ package notifier
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
+	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 )
 
+var (
+	httpClient = &http.Client{
+		Timeout: 15 * time.Second,
+	}
+)
+
 // Interface implemented by everything that wants to send notifications
 type Sender interface {
-	Send(n *obj.Notification, e obj.Event) error
+	Send(n *obj.Notification, e *checker.CheckResult) error
 }
 
 // A notifier is a map of Senders
@@ -63,7 +72,7 @@ func (n Notifier) getSender(t string) (Sender, error) {
 }
 
 // A Send should require only a notification (userID, type, value) and Event (check info)
-func (n Notifier) Send(notification *obj.Notification, event obj.Event) error {
+func (n Notifier) Send(notification *obj.Notification, event *checker.CheckResult) error {
 	sender, err := n.getSender(notification.Type)
 	if err == nil {
 		return sender.Send(notification, event)

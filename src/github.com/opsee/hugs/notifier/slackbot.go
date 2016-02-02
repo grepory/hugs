@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/bluele/slack"
+	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/obj"
 )
 
@@ -12,12 +13,12 @@ type SlackBotSender struct {
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
-func (this SlackBotSender) Send(n *obj.Notification, e obj.Event) error {
-	passing := "passing"
-	if e.FailCount > 0 {
-		passing = "failing"
+func (this SlackBotSender) Send(n *obj.Notification, e *checker.CheckResult) error {
+	state := "passing"
+	if !e.Passing {
+		state = "failing"
 	}
-	msg := fmt.Sprintf(`Check "%s" is *%s*.`, e.CheckName, passing)
+	msg := fmt.Sprintf(`Check "%s" is *%s*.`, e.CheckName, state)
 
 	token, err := this.getSlackToken(n)
 	if err != nil {
