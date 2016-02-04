@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/config"
@@ -18,6 +19,8 @@ import (
 )
 
 func buildEvent(n *obj.Notification, result *checker.CheckResult) *obj.Event {
+	log.WithFields(log.Fields{"notification": n}).Info("Building event.")
+
 	event := &obj.Event{
 		Result: result,
 	}
@@ -31,6 +34,7 @@ func buildEvent(n *obj.Notification, result *checker.CheckResult) *obj.Event {
 			log.WithFields(log.Fields{"err": err}).Error("Error getting Notificaption data")
 		} else {
 			event.Nocap = resp
+			log.WithFields(log.Fields{"nocap": resp}).Info("Got nocap response")
 		}
 	}
 
@@ -63,6 +67,7 @@ func getNocapResponse(n *obj.Notification, result *checker.CheckResult) (*obj.No
 			return nil, err
 		}
 		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", base64User))
+		req.Header.Add("Accept", "application/x-protobuf")
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
@@ -76,9 +81,10 @@ func getNocapResponse(n *obj.Notification, result *checker.CheckResult) (*obj.No
 		}
 
 		check := &checker.Check{}
-		if err := json.Unmarshal(checkBytes, check); err != nil {
+		if err := proto.Unmarshal(checkBytes, check); err != nil {
 			return nil, err
 		}
+		log.WithFields(log.Fields{"check": check.String()}).Info("Got check from Bartnet")
 
 		body := bytes.NewBuffer(checkBytes)
 
@@ -107,6 +113,7 @@ func getNocapResponse(n *obj.Notification, result *checker.CheckResult) (*obj.No
 		if err := json.Unmarshal(bodyBytes, notifData); err != nil {
 			return nil, err
 		}
+		log.WithFields(log.Fields{"response": notifData}).Info("Got response from Notificaption")
 
 		return notifData, nil
 	}
