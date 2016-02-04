@@ -1,17 +1,15 @@
 package slack
-
 var CheckPassing = `{
-  "text": "Check Passing",
-  "username": "OpseeNotifier",
-  "icon_url": "https://s3-us-west-1.amazonaws.com/opsee-public-images/slack-avi-48-red.png",
+ "token": "{{token}}",
+  "channel":"{{channel}}",
+  "text": "*{{check_name}}* passing in *{{group_name}}*",
+  "username": "OpseeBot",
+  "icon_url": "https://s3-us-west-1.amazonaws.com/opsee-public-images/slack-avi-48-green.png",
   "attachments": [
     {
-      "text": "{{check_name}} passing in {{group_name}}",
-      "color": "#f44336"
-    },
-    {
-      "text":"All Instances Passing",
-      "color": "#424242"
+      "text": "Everything is fine",
+      "color": "#69a92c"
     }
   ]
-}`
+}
+`

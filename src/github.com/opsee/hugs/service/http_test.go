@@ -14,7 +14,6 @@ import (
 
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
-	"github.com/opsee/hugs/apiutils"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
@@ -22,6 +21,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func startSlackAPIEmulator() {
+	oaResponse := &obj.SlackOAuthResponse{
+		AccessToken: "test",
+		Scope:       "test",
+		TeamName:    "test",
+		TeamID:      "test",
+		IncomingWebhook: &obj.SlackIncomingWebhook{
+			URL:              "test",
+			Channel:          "test",
+			ConfigurationURL: "test",
+		},
+		Bot: &obj.SlackBotCreds{
+			BotUserID:      "test",
+			BotAccessToken: "test",
+		},
+	}
+
+	oaResponseData, err := json.Marshal(oaResponse)
+	if err != nil {
+		log.Fatal(err)
+	}
+	http.HandleFunc("/api/oauth.access", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, string(oaResponseData), r.URL.Path)
+	})
+
+	log.Fatal(http.ListenAndServe(":7766", nil))
+}
 func GetUserAuthToken(user *com.User) string {
 	userstring := fmt.Sprintf(`{"id": %d, "customer_id": "%s", "user_id": "%s", "email": "%s", "verified": %t, "admin": %t, "active": %t}`, user.ID, user.CustomerID, user.ID, user.Email, user.Verified, user.Admin, user.Active)
 	token := base64.StdEncoding.EncodeToString([]byte(userstring))
@@ -115,7 +141,7 @@ func NewServiceTest() *ServiceTest {
 
 	serviceTest.Service.router = serviceTest.Router
 	log.Info("Starting slack api emulator...")
-	go apiutils.StartSlackAPIEmulator()
+	go startSlackAPIEmulator()
 
 	log.Info("Adding initial notifications to obj...")
 	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
@@ -136,7 +162,7 @@ func NewServiceTest() *ServiceTest {
 		},
 		Bot: &obj.SlackBotCreds{
 			BotUserID:      "test",
-			BotAccessToken: "test",
+			BotAccessToken: config.GetConfig().SlackTestToken,
 		},
 	}
 
@@ -338,7 +364,7 @@ func TestGetSlackToken(t *testing.T) {
 	}
 
 	log.WithFields(log.Fields{"TestGetSlackToken": "Got slack token."}).Info(resp)
-	assert.Equal(t, http.StatusNotFound, rw.Code)
+	assert.Equal(t, http.StatusOK, rw.Code)
 }
 
 // Note that this should fail because code will be invalid.
@@ -366,3 +392,40 @@ func TestPostSlackCode(t *testing.T) {
 	Common.Service.router.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusBadRequest, rw.Code)
 }
+
+// Test posting a message to slack
+/*
+func TestPostSlackTest(t *testing.T) {
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
+				ID:         0,
+				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserID:     13,
+				CheckID:    "00002",
+				Value:      "C0ATUFZ7X",
+				//Value: "C0HM1ENP5",
+				Type: "slack_bot",
+			}},
+	}
+
+	notifs, err := json.Marshal(cn)
+	if err != nil {
+		t.FailNow()
+	}
+
+	rdr := bytes.NewBufferString(string(notifs))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/services/slack/test", Common.Service.config.PublicHost), rdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+	log.Info(string(rw.Body.Bytes()))
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+*/
