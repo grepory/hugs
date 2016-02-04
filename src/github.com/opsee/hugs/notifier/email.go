@@ -1,11 +1,13 @@
 package notifier
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/keighl/mandrill"
 	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/obj"
+	log "github.com/sirupsen/logrus"
 )
 
 type EmailSender struct {
@@ -17,21 +19,34 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	result := e.Result
 	var (
 		templateName string
+		responses    []*checker.CheckResponse
 	)
 
-	failingResponses := result.FailingResponses()
+	if result.Passing {
+		responses = result.Responses
+	} else {
+		responses = result.FailingResponses()
+	}
+
+	log.WithFields(log.Fields{"responses": responses}).Info("Got responses.")
 
 	// It's a possible error state that if the CheckResult.Passing field is false,
 	// i.e. this is a failing event, that there are somehow no constituent failing
 	// CheckResponse objects contained within the CheckResult. We cannot know _why_
 	// these CheckResponse objects aren't failing. Because we cannot ordain the reason
 	// for this error state, let us first err on the side of not bugging a customer.
-	if len(failingResponses) < 1 && !result.Passing {
+	if len(responses) < 1 && !result.Passing {
 		return errors.New("Received failing CheckResult with no failing responses.")
 	}
-	failingInstances := []*checker.Target{}
-	for _, resp := range failingResponses {
-		failingInstances = append(failingInstances, resp.Target)
+	instances := []*checker.Target{}
+	for _, resp := range responses {
+		instances = append(instances, resp.Target)
+	}
+	log.WithFields(log.Fields{"instances": instances}).Info("Got instances.")
+
+	responseJson, err := json.MarshalIndent(responses[0], "", "  ")
+	if err != nil {
+		return err
 	}
 
 	templateContent := map[string]interface{}{
@@ -39,11 +54,12 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		"check_name":     result.CheckName,
 		"group_id":       result.Target.Id,
 		"group_name":     result.Target.Id,
-		"first_response": failingResponses[0],
+		"first_response": string(responseJson),
 		"instance_count": len(result.Responses),
-		"instances":      failingInstances,
-		"fail_count":     len(failingResponses),
+		"instances":      instances,
+		"fail_count":     result.FailingCount(),
 	}
+	log.WithFields(log.Fields{"template_content": templateContent}).Info("Build template content")
 
 	if result.Target.Name != "" {
 		templateContent["group_name"] = result.Target.Name
@@ -68,7 +84,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		}
 	}
 
-	mergeVars := make(map[string]interface{})
+	mergeVars := templateContent
 	mergeVars["opsee_host"] = es.opseeHost
 	message := &mandrill.Message{}
 	message.AddRecipient(n.Value, n.Value, "to")
@@ -76,7 +92,9 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	message.MergeLanguage = "handlebars"
 	message.MergeVars = []*mandrill.RcptMergeVars{mandrill.MapToRecipientVars(n.Value, mergeVars)}
 
-	_, err := es.mailClient.MessagesSendTemplate(message, templateName, templateContent)
+	log.Info(message)
+
+	_, err = es.mailClient.MessagesSendTemplate(message, templateName, templateContent)
 	return err
 }
 

@@ -1,13 +1,15 @@
 package sqsconsumer
 
 import (
-	"encoding/json"
+	//"encoding/json"
+	"encoding/base64"
 	"net/http"
 	"sync/atomic"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/golang/protobuf/proto"
 	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/notifier"
@@ -107,13 +109,18 @@ func (w *Worker) Work() {
 			continue
 		}
 
-		bodyBytes := []byte(*message.Body)
+		bodyBytes, err := base64.StdEncoding.DecodeString(*message.Body)
+		if err != nil {
+			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot decode message body")
+			continue
+		}
 		result := &checker.CheckResult{}
-		err := json.Unmarshal(bodyBytes, result)
+		err = proto.Unmarshal(bodyBytes, result)
 		if err != nil {
 			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot unmarshal message body")
 			continue
 		}
+		log.WithFields(log.Fields{"worker": w.ID, "CheckResult": result.String()}).Info("Unmarshalled CheckResult.")
 
 		notifications, err := w.Store.UnsafeGetNotificationsByCheckID(result.CheckId)
 		if err != nil {
@@ -131,6 +138,7 @@ func (w *Worker) Work() {
 		event := buildEvent(notifications[0], result)
 
 		for _, notification := range notifications {
+			notification.Value = "greg@opsee.com"
 			// Send notification with Notifier
 			sendErr := w.Notifier.Send(notification, event)
 			if sendErr != nil {
