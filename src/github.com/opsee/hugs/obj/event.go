@@ -24,15 +24,14 @@ func (this *Event) Validate() error {
 func GenerateTestEvent() *Event {
 	checkResult := &checker.CheckResult{
 		CheckId:   "00002",
-		CheckName: `You'll never believe what we found`,
+		CheckName: `Test Check`,
 		Target: &checker.Target{
-			Id: `your AWS Environment`,
+			Id: `Test Target`,
 		},
-
 		Responses: []*checker.CheckResponse{
 			&checker.CheckResponse{
 				Target: &checker.Target{
-					Id: "Your whole aws",
+					Id: "test-target",
 				},
 				Error:   "You won't believe what we found.",
 				Passing: false,

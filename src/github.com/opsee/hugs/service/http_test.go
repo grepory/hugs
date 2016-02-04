@@ -403,9 +403,8 @@ func TestPostSlackTest(t *testing.T) {
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "00002",
-				Value:      "C0ATUFZ7X",
-				//Value: "C0HM1ENP5",
-				Type: "slack_bot",
+				Value:      "C0ADACATT",
+				Type:       "slack_bot",
 			}},
 	}
 
@@ -416,6 +415,39 @@ func TestPostSlackTest(t *testing.T) {
 
 	rdr := bytes.NewBufferString(string(notifs))
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/services/slack/test", Common.Service.config.PublicHost), rdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+	log.Info(string(rw.Body.Bytes()))
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
+func TestPostEmailTest(t *testing.T) {
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
+				ID:         0,
+				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserID:     13,
+				CheckID:    "00002",
+				Value:      "dan@opsee.com",
+				Type:       "email",
+			}},
+	}
+
+	notifs, err := json.Marshal(cn)
+	if err != nil {
+		t.FailNow()
+	}
+
+	rdr := bytes.NewBufferString(string(notifs))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/services/email/test", Common.Service.config.PublicHost), rdr)
 	if err != nil {
 		t.Fatal(err)
 	}

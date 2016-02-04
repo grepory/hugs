@@ -51,7 +51,6 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 			"check_id":       result.CheckId,
 			"check_name":     result.CheckName,
 			"group_name":     result.Target.Id,
-			"first_response": failingResponses[0],
 			"instance_count": len(result.Responses),
 			"fail_count":     len(failingResponses),
 			"token":          token,

@@ -138,6 +138,10 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 	return slackResponse, nil
 }
 
+type SlackPostChatMessageResponse struct {
+	SlackResponse
+}
+
 type SlackPostChatMessageRequest struct {
 	Token       string             `json:"token"`
 	Channel     string             `json:"channel"`
@@ -155,8 +159,15 @@ type SlackPostChatMessageRequest struct {
 	EscapeText  bool               `json:"escape_text"`
 }
 
-type SlackPostChatMessageResponse struct {
-	SlackResponse
+// unescapes for chars like ' " etc, escapes slack control characters
+func (this *SlackPostChatMessageRequest) prepareText() {
+
+	this.Text = escapeMessage(this.Text)
+	for i, attachment := range this.Attachments {
+		this.Attachments[i].Title = escapeMessage(attachment.Title)
+		this.Attachments[i].Text = escapeMessage(attachment.Text)
+		this.Attachments[i].Pretext = escapeMessage(attachment.Pretext)
+	}
 }
 
 func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMessageResponse, error) {
@@ -168,6 +179,7 @@ func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMess
 		"channel": {this.Channel},
 	}
 
+	this.prepareText()
 	values.Set("username", string(this.Username))
 	values.Set("as_user", "false")
 	if this.Attachments != nil {
@@ -178,8 +190,8 @@ func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMess
 		values.Set("attachments", string(attachments))
 	}
 	values.Set("icon_url", this.IconURL)
-	values.Set("text", escapeMessage(this.Text))
 	values.Set("parse", "full")
+
 	//values.Set("unfurl_links", "true")
 	//values.Set("unfurl_media", "false")
 	//values.Set("icon_emoji", this.IconEmoji)
