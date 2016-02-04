@@ -62,6 +62,7 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
 	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
 	rtr.Handle("POST", "/services/slack/test", decoders(com.User{}, obj.Notifications{}), s.postSlackTest())
+	rtr.Handle("POST", "/services/email/test", decoders(com.User{}, obj.Notifications{}), s.postEmailTest())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -399,6 +400,42 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 		err = slackSender.Send(request.Notifications[0], event)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackTest", "error": err}).Error("Error sending notification to slack")
+			return ctx, http.StatusBadRequest, err
+		}
+
+		return nil, http.StatusOK, nil
+	}
+}
+
+func (s *Service) postEmailTest() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		emailSender, err := notifier.NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "postEmailTest"}).Error("Couldn't get email sender.")
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		if len(request.Notifications) < 1 {
+			log.WithFields(log.Fields{"service": "postEmailTest"}).Error("Invalid notification")
+			return ctx, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
+		}
+
+		event := obj.GenerateTestEvent()
+		request.Notifications[0].CustomerID = user.CustomerID
+
+		err = emailSender.Send(request.Notifications[0], event)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "postEmailTest", "error": err}).Error("Error sending notification via email.")
 			return ctx, http.StatusBadRequest, err
 		}
 
