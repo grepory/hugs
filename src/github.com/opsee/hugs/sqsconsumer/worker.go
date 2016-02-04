@@ -138,7 +138,6 @@ func (w *Worker) Work() {
 		event := buildEvent(notifications[0], result)
 
 		for _, notification := range notifications {
-			notification.Value = "greg@opsee.com"
 			// Send notification with Notifier
 			sendErr := w.Notifier.Send(notification, event)
 			if sendErr != nil {
