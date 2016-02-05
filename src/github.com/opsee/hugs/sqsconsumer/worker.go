@@ -99,6 +99,7 @@ func (w *Worker) Work() {
 		time.Sleep((1 << uint(w.errCount+1)) * time.Millisecond * 10)
 		return
 	}
+
 	if len(message.Messages) > 0 {
 		w.errCount = 0
 	}
@@ -142,6 +143,25 @@ func (w *Worker) Work() {
 			sendErr := w.Notifier.Send(notification, event)
 			if sendErr != nil {
 				log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
+			} else {
+				input := &sqs.DeleteMessageInput{
+					QueueUrl:      aws.String(w.Site.QueueUrl),
+					ReceiptHandle: message.ReceiptHandle,
+				}
+
+				// TODO(dan) we can't wait too long here or the message will become visible again.
+				deletedMessage := false
+				for deleteTry := 1; deleteTry < 5; deleteTry++ {
+					_, err := w.SQS.DeleteMessage(input)
+					if err == nil {
+						deletedMessage = true
+						break
+					}
+					time.Sleep((1 << uint(deleteTry+1)) * time.Millisecond * 10)
+				}
+				if deletedMessage == false {
+					log.WithFields(log.Fields{"worker": w.ID, "message": message}).Error("Couldn't delete message from queue.")
+				}
 			}
 		}
 	}
