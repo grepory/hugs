@@ -6,6 +6,7 @@ import (
 
 	"github.com/keighl/mandrill"
 	"github.com/opsee/hugs/checker"
+	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 	log "github.com/sirupsen/logrus"
 )
@@ -38,6 +39,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	if len(responses) < 1 && !result.Passing {
 		return errors.New("Received failing CheckResult with no failing responses.")
 	}
+
 	instances := []*checker.Target{}
 	for _, resp := range responses {
 		instances = append(instances, resp.Target)
@@ -58,6 +60,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		"instance_count": len(result.Responses),
 		"instances":      instances,
 		"fail_count":     result.FailingCount(),
+		"opsee_host":     config.GetConfig().OpseeHost,
 	}
 	log.WithFields(log.Fields{"template_content": templateContent}).Info("Build template content")
 
@@ -70,7 +73,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		templateContent["json_url"] = nocap.JSONUrl
 		// TODO(greg): The images will have sizes in nocap response soon.
 		templateContent["img_400"] = nocap.Images["default"]
-		templateContent["img_400"] = nocap.Images["default"]
+		templateContent["img_800"] = nocap.Images["default"]
 		if result.Passing {
 			templateName = "check-pass-image"
 		} else {
