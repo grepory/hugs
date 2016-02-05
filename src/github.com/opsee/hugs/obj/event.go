@@ -33,15 +33,21 @@ func GenerateTestEvent() *Event {
 				Target: &checker.Target{
 					Id: "test-target",
 				},
-				Error:   "You won't believe what we found.",
-				Passing: false,
 			},
 		},
+		Passing: true,
 		Version: 1,
 	}
+
 	event := &Event{
 		Result: checkResult,
-		Test:   true,
+		Nocap: &NocapResponse{
+			Images: map[string]string{
+				"default": "https://opsee-notificaption-images.s3.amazonaws.com/dGhlIHJhcmVzdCBwZXBl_1454622727136_800.png",
+			},
+			JSONUrl: "https://opsee-notificaption-images.s3.amazonaws.com/dGhlIHJhcmVzdCBwZXBl_1454621842230.json",
+		},
+		Test: true,
 	}
 	return event
 }

@@ -427,7 +427,6 @@ func TestPostSlackTest(t *testing.T) {
 	log.Info(string(rw.Body.Bytes()))
 	assert.Equal(t, http.StatusOK, rw.Code)
 }
-
 func TestPostEmailTest(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
