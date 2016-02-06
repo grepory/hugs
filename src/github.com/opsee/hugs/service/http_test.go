@@ -177,7 +177,7 @@ func NewServiceTest() *ServiceTest {
 var Common = NewServiceTest()
 
 func TestGetNotifications(t *testing.T) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifs", Common.Service.config.PublicHost), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestPostNotifications(t *testing.T) {
 		t.FailNow()
 	}
 	rdr := bytes.NewBufferString(string(cnBytes))
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/notifs", Common.Service.config.PublicHost), rdr)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/notifications", Common.Service.config.PublicHost), rdr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +234,7 @@ func TestPostNotifications(t *testing.T) {
 }
 
 func TestGetNotificationsByCheckID(t *testing.T) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifs/00002", Common.Service.config.PublicHost), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/00002", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func TestPutNotification(t *testing.T) {
 	}
 
 	rdr := bytes.NewBufferString(string(cnBytes))
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/notifs/666", Common.Service.config.PublicHost), rdr)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/notifications/666", Common.Service.config.PublicHost), rdr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestPutNotification(t *testing.T) {
 }
 
 func TestGetNotificationsByCheckID666(t *testing.T) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifs/666", Common.Service.config.PublicHost), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/666", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +317,7 @@ func TestGetNotificationsByCheckID666(t *testing.T) {
 }
 
 func TestDeleteNotifications(t *testing.T) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifs/00002", Common.Service.config.PublicHost), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifications/00002", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

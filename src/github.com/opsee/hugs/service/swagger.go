@@ -155,7 +155,7 @@ var swaggerMap = j{
 				"tags":    k{"getslacktoken"},
 			},
 		},
-		"/notifs": j{
+		"/notifications": j{
 			"get": j{
 				"responses": j{
 					"200": j{
@@ -196,7 +196,7 @@ var swaggerMap = j{
 			},
 		},
 
-		"/notifs/j {check_id}": j{
+		"/notifications/{check_id}": j{
 			"delete": j{
 				"parameters": []j{
 					j{
