@@ -81,6 +81,8 @@ func (w *Worker) Start() {
 
 // TODO(greg): We need to be deleting messages from the queue. As it stands, we're just requeueing them over and over again.
 func (w *Worker) Work() {
+	log.WithFields(log.Fields{"worker": w.ID}).Info("Doing work...")
+
 	input := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(w.Site.QueueUrl),
 		VisibilityTimeout:   aws.Int64(90),
@@ -102,6 +104,7 @@ func (w *Worker) Work() {
 	}
 
 	if len(message.Messages) > 0 {
+		log.WithFields(log.Fields{"worker": w.ID, "message_count": len(message.Messages)}).Info("Got messages...")
 		w.errCount = 0
 	}
 
