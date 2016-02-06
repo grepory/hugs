@@ -83,6 +83,7 @@ func (w *Worker) Start() {
 func (w *Worker) Work() {
 	input := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(w.Site.QueueUrl),
+		VisibilityTimeout:   aws.Int64(90),
 		MaxNumberOfMessages: aws.Int64(10),
 		WaitTimeSeconds:     aws.Int64(20),
 	}
