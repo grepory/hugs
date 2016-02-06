@@ -205,6 +205,8 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 		}
 
 		for _, n := range request.Notifications {
+			n.CustomerID = user.CustomerID
+			n.UserID = user.ID
 			n.CheckID = checkID
 		}
 

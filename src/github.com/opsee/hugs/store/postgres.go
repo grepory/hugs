@@ -84,9 +84,6 @@ func (pg *Postgres) UnsafePutNotification(notification *obj.Notification) error 
 }
 
 func (pg *Postgres) PutNotification(user *com.User, notification *obj.Notification) error {
-	if notification.CustomerID != user.CustomerID {
-		return fmt.Errorf("Customer ID does not match notification ID")
-	}
 	_, err := pg.db.NamedExec(
 		`insert into notifications (customer_id, user_id, check_id, value, type)
                  values (:customer_id, :user_id, :check_id, :value, :type)
