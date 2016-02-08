@@ -4,7 +4,6 @@ import (
 	//"encoding/json"
 	"encoding/base64"
 	"net/http"
-	"sync/atomic"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,18 +23,17 @@ var (
 )
 
 type Worker struct {
-	ID                int64
-	Site              *Site
+	ID                string
 	SQS               *sqs.SQS
+	SQSUrl            string
 	Store             *store.Postgres
 	Notifier          *notifier.Notifier
-	CommandChan       chan ForemanCommand
 	errCount          int
 	errCountThreshold int
 }
 
-func NewWorker(site *Site) (*Worker, error) {
-	s, err := store.NewPostgres(site.DBUrl)
+func NewWorker(ID string, maxErr int) (*Worker, error) {
+	s, err := store.NewPostgres(config.GetConfig().PostgresConn)
 	if err != nil {
 		return nil, err
 	}
@@ -44,39 +42,25 @@ func NewWorker(site *Site) (*Worker, error) {
 	notifier, errMap := notifier.NewNotifier()
 	for k, v := range errMap {
 		if v != nil {
-			log.WithFields(log.Fields{"worker": "initializing", "error": v}).Info("Couldn't initialize notifier: ", k)
+			log.WithFields(log.Fields{"worker": ID, "error": v}).Info("Couldn't initialize notifier: ", k)
 		}
 	}
 
 	return &Worker{
-		ID:                -1,
-		Site:              site,
+		ID:                ID,
 		SQS:               sqs.New(config.GetConfig().AWSSession),
 		Store:             s,
 		Notifier:          notifier,
-		CommandChan:       make(chan ForemanCommand),
 		errCount:          0,
-		errCountThreshold: 12,
+		errCountThreshold: maxErr,
 	}, nil
 }
 
 func (w *Worker) Start() {
-	go func() {
-		w.Site.WorkerPool <- w.CommandChan
-		w.ID = atomic.AddInt64(w.Site.CurrentWorkerCount, 1)
-		for {
-			select {
-			case command := <-w.CommandChan:
-				if command == Quit {
-					log.WithFields(log.Fields{"worker": w.ID}).Info("Quitting.")
-					atomic.AddInt64(w.Site.CurrentWorkerCount, -1)
-					return
-				}
-			default:
-				w.Work()
-			}
-		}
-	}()
+	log.WithFields(log.Fields{"worker": w.ID}).Info("Starting up.")
+	for {
+		w.Work()
+	}
 }
 
 // TODO(greg): We need to be deleting messages from the queue. As it stands, we're just requeueing them over and over again.
@@ -84,8 +68,7 @@ func (w *Worker) Work() {
 	log.WithFields(log.Fields{"worker": w.ID}).Info("Doing work...")
 
 	input := &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String(w.Site.QueueUrl),
-		VisibilityTimeout:   aws.Int64(90),
+		QueueUrl:            aws.String(w.SQSUrl),
 		MaxNumberOfMessages: aws.Int64(10),
 		WaitTimeSeconds:     aws.Int64(20),
 	}
@@ -158,7 +141,7 @@ func (w *Worker) Work() {
 		if doDelete {
 			// TODO(dan) we can't wait too long here or the message will become visible again.
 			deleteMessageInput := &sqs.DeleteMessageInput{
-				QueueUrl:      aws.String(w.Site.QueueUrl),
+				QueueUrl:      aws.String(w.SQSUrl),
 				ReceiptHandle: message.ReceiptHandle,
 			}
 			deletedMessage := false
@@ -175,10 +158,4 @@ func (w *Worker) Work() {
 			}
 		}
 	}
-}
-
-func (w *Worker) Stop() {
-	go func() {
-		w.CommandChan <- Quit
-	}()
 }
