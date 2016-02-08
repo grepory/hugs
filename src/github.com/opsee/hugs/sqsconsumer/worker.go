@@ -81,26 +81,30 @@ func (w *Worker) Start() {
 
 // TODO(greg): We need to be deleting messages from the queue. As it stands, we're just requeueing them over and over again.
 func (w *Worker) Work() {
+	log.WithFields(log.Fields{"worker": w.ID}).Info("Doing work...")
+
 	input := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(w.Site.QueueUrl),
+		VisibilityTimeout:   aws.Int64(90),
 		MaxNumberOfMessages: aws.Int64(10),
+		WaitTimeSeconds:     aws.Int64(20),
 	}
 	message, err := w.SQS.ReceiveMessage(input)
 
-	if err != nil || len(message.Messages) == 0 {
+	if err != nil {
+		log.WithFields(log.Fields{"worker": w.ID, "err": err}).Error("Encountered error.  Sleeping...")
+
 		w.errCount += 1
 		if w.errCount >= w.errCountThreshold {
 			w.errCount = w.errCountThreshold / 2
 			return
-		}
-		if err != nil {
-			log.WithFields(log.Fields{"worker": w.ID, "err": err}).Error("Encountered error.  Sleeping...")
 		}
 		time.Sleep((1 << uint(w.errCount+1)) * time.Millisecond * 10)
 		return
 	}
 
 	if len(message.Messages) > 0 {
+		log.WithFields(log.Fields{"worker": w.ID, "message_count": len(message.Messages)}).Info("Got messages...")
 		w.errCount = 0
 	}
 
@@ -138,30 +142,36 @@ func (w *Worker) Work() {
 
 		event := buildEvent(notifications[0], result)
 
+		doDelete := false
 		for _, notification := range notifications {
 			// Send notification with Notifier
 			sendErr := w.Notifier.Send(notification, event)
 			if sendErr != nil {
 				log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
 			} else {
-				input := &sqs.DeleteMessageInput{
-					QueueUrl:      aws.String(w.Site.QueueUrl),
-					ReceiptHandle: message.ReceiptHandle,
-				}
+				// If we successfully send one notification, then we're going to delete the SQS Message.
+				// TODO(greg): Separate queues per notification type.
+				doDelete = true
+			}
+		}
 
-				// TODO(dan) we can't wait too long here or the message will become visible again.
-				deletedMessage := false
-				for deleteTry := 1; deleteTry < 5; deleteTry++ {
-					_, err := w.SQS.DeleteMessage(input)
-					if err == nil {
-						deletedMessage = true
-						break
-					}
-					time.Sleep((1 << uint(deleteTry+1)) * time.Millisecond * 10)
+		if doDelete {
+			// TODO(dan) we can't wait too long here or the message will become visible again.
+			deleteMessageInput := &sqs.DeleteMessageInput{
+				QueueUrl:      aws.String(w.Site.QueueUrl),
+				ReceiptHandle: message.ReceiptHandle,
+			}
+			deletedMessage := false
+			for deleteTry := 1; deleteTry < 5; deleteTry++ {
+				_, err := w.SQS.DeleteMessage(deleteMessageInput)
+				if err == nil {
+					deletedMessage = true
+					break
 				}
-				if deletedMessage == false {
-					log.WithFields(log.Fields{"worker": w.ID, "message": message}).Error("Couldn't delete message from queue.")
-				}
+				time.Sleep((1 << uint(deleteTry+1)) * time.Millisecond * 10)
+			}
+			if deletedMessage == false {
+				log.WithFields(log.Fields{"worker": w.ID, "message": message}).Error("Couldn't delete message from queue.")
 			}
 		}
 	}

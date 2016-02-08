@@ -195,6 +195,7 @@ func (foreman *Foreman) recruitWorker() {
 	worker, err := NewWorker(foreman.Site)
 	if err != nil {
 		log.WithFields(log.Fields{"foreman": foreman.ID, "error": err}).Warn("Couldn't recruit new worker!")
+		return
 	}
 	worker.Start()
 }
@@ -216,22 +217,9 @@ func (foreman *Foreman) issueCommands() {
 // Start managed worker pool
 func (foreman *Foreman) Start() {
 	foreman.InitWorkers()
-	go foreman.issueCommands()
-	foreman.initWorkEstimateHistory()
-
 	for {
-		ta := time.Now()
-		foreman.EstimateWork()
-		foreman.AdjustWorkerCount()
-		elapsed := time.Since(ta)
-
-		wait := time.Duration(foreman.UpdateFreqSec)*time.Second - elapsed
-		if wait < time.Duration(0)*time.Second {
-			log.WithFields(log.Fields{"foreman": foreman.ID}).Warn("Couldn't finish tasks in allotted time!")
-			continue
-		}
-
-		time.Sleep(wait) // wait the rest of the minute
+		//wait := time.Duration(foreman.UpdateFreqSec)
+		time.Sleep(time.Second * 60) // wait the rest of the minute
 		log.WithFields(log.Fields{"foreman": foreman.ID}).Info("Finished cycle @", time.Now())
 	}
 }
