@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/service"
 	"github.com/opsee/hugs/sqsconsumer"
 	"github.com/opsee/hugs/util"
@@ -18,7 +19,7 @@ func main() {
 	}()
 
 	// worker's ID, error threshold prior to idle
-	worker, err := sqsconsumer.NewWorker(util.RandomString(5), 12)
+	worker, err := sqsconsumer.NewWorker(util.RandomString(5), 12, config.GetConfig().SqsUrl)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -32,7 +32,7 @@ type Worker struct {
 	errCountThreshold int
 }
 
-func NewWorker(ID string, maxErr int) (*Worker, error) {
+func NewWorker(ID string, maxErr int, sqsUrl string) (*Worker, error) {
 	s, err := store.NewPostgres(config.GetConfig().PostgresConn)
 	if err != nil {
 		return nil, err
@@ -49,6 +49,7 @@ func NewWorker(ID string, maxErr int) (*Worker, error) {
 	return &Worker{
 		ID:                ID,
 		SQS:               sqs.New(config.GetConfig().AWSSession),
+		SQSUrl:            sqsUrl,
 		Store:             s,
 		Notifier:          notifier,
 		errCount:          0,
