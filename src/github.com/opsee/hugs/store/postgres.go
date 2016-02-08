@@ -65,22 +65,33 @@ func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([
 }
 
 func (pg *Postgres) PutNotifications(user *com.User, notifications []*obj.Notification) error {
+	if len(notifications) > 0 {
+		pg.DeleteNotificationsByCheckId(user, notifications[0].CheckID)
+	}
+
+	customer := obj.Customer{}
+	err := pg.db.Get(&customer, "SELECT * from customers WHERE id=$1", user.CustomerID)
+
+	if err != nil {
+		log.WithFields(log.Fields{"postgres": "PutNotifications", "user": user, "error": err}).Error("Couldn't get customer id.")
+		return fmt.Errorf("Couldn't put notifications. Couldn't get customerID.")
+	}
+
+	if customer.ID == "" {
+		log.WithFields(log.Fields{"postgres": "PutNotifications", "CustomerID": user}).Error("Adding new customer.")
+		pg.db.MustExec("INSERT INTO customers (id) VALUES ($1)", user.CustomerID)
+	}
+
 	for _, notification := range notifications {
 		err := pg.PutNotification(user, notification)
+
 		if err != nil {
 			log.WithFields(log.Fields{"postgres": "PutNotifications", "user": user, "notification": notification, "error": err}).Error("Couldn't put notification.")
 			return fmt.Errorf("Couldn't put notification.")
 		}
+		log.WithFields(log.Fields{"postgres": "PutNotifications", "user": user, "notification": notification}).Debug("Put notification.")
 	}
 	return nil
-}
-
-func (pg *Postgres) UnsafePutNotification(notification *obj.Notification) error {
-	_, err := pg.db.NamedExec(
-		`insert into notifications (customer_id, user_id, check_id, value, type)
-                 values (:customer_id, :user_id, :check_id, :value, :type)
-                 returning id`, notification)
-	return err
 }
 
 func (pg *Postgres) PutNotification(user *com.User, notification *obj.Notification) error {
@@ -128,6 +139,11 @@ func (pg *Postgres) DeleteNotification(user *com.User, notification *obj.Notific
 
 func (pg *Postgres) DeleteNotificationsByUser(user *com.User) error {
 	_, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1`, user.CustomerID)
+	return err
+}
+
+func (pg *Postgres) DeleteNotificationsByCheckId(user *com.User, checkId string) error {
+	_, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1 AND check_id=$2`, user.CustomerID, checkId)
 	return err
 }
 
