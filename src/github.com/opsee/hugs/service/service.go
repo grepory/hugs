@@ -106,6 +106,12 @@ func (s *Service) postNotifications() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
+		// Set notification userID and customerID
+		for _, n := range request.Notifications {
+			n.CustomerID = user.CustomerID
+			n.UserID = user.ID
+		}
+
 		err := s.db.PutNotifications(user, request.Notifications)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Couldn't put notifications in database.")
@@ -204,6 +210,7 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
+		// Set notification userID and customerID
 		for _, n := range request.Notifications {
 			n.CustomerID = user.CustomerID
 			n.UserID = user.ID
