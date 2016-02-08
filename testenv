@@ -3,8 +3,6 @@ HUGS_POSTGRES_CONN=postgres://postgres:postgres@postgres:5432/hugs_test?sslmode=
 HUGS_AWS_REGION=us-east-1
 HUGS_OPSEE_HOST=https://app.opsee.com/
 HUGS_TEST=yeahbuddy
-HUGS_MAX_WORKERS=100
-HUGS_MIN_WOKERS=50
 HUGS_VAPE_ENDPOINT=none
 HUGS_VAPE_KEYFILE=/vape.test.key
 HUGS_LOG_LEVEL=info

@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,8 +23,6 @@ type Config struct {
 	MandrillApiKey        string `required:"true"`
 	VapeEndpoint          string `required:"true"`
 	VapeKey               string `required:"true"`
-	MaxWorkers            int64
-	MinWorkers            int64
 	LogLevel              string
 	SlackClientSecret     string `required:"true"`
 	SlackClientID         string `required:"true"`
@@ -77,30 +74,6 @@ func (this *Config) setLogLevel() {
 
 func GetConfig() *Config {
 	once.Do(func() {
-		// try to safely get max workers from env
-		defaultMaxWorkers := int64(25)
-		defaultMinWorkers := int64(1)
-		maxWorkers := defaultMaxWorkers
-		minWorkers := defaultMinWorkers
-
-		maxWorkersString := os.Getenv("HUGS_MAX_WORKERS")
-		minWorkersString := os.Getenv("HUGS_MIN_WORKERS")
-
-		if len(maxWorkersString) > 0 && len(minWorkersString) > 0 {
-			maxWorkersEnv, err1 := strconv.Atoi(maxWorkersString)
-			minWorkersEnv, err2 := strconv.Atoi(minWorkersString)
-			if err1 == nil && err2 == nil {
-				if minWorkersEnv > 0 && maxWorkersEnv > minWorkersEnv {
-					maxWorkers = int64(maxWorkersEnv)
-					minWorkers = int64(minWorkersEnv)
-				}
-			} else {
-				log.WithFields(log.Fields{"config": "GetConfig"}).Warn("Errors getting HUGS_MAX_WORKERS and HUGS_MIN_WORKERS: ", err1, " ", err2)
-			}
-		} else {
-			log.WithFields(log.Fields{"config": "GetConfig"}).Warn("Config: using default value for MaxWorkers and MinWorkers")
-		}
-
 		c := &Config{
 			PublicHost:            os.Getenv("HUGS_HOST"),
 			PostgresConn:          os.Getenv("HUGS_POSTGRES_CONN"),
@@ -118,8 +91,6 @@ func GetConfig() *Config {
 			SlackTestClientSecret: os.Getenv("HUGS_TEST_SLACK_CLIENT_SECRET"),
 			NotificaptionEndpoint: os.Getenv("HUGS_NOTIFICAPTION_ENDPOINT"),
 			BartnetEndpoint:       os.Getenv("HUGS_BARTNET_ENDPOINT"),
-			MaxWorkers:            maxWorkers,
-			MinWorkers:            minWorkers,
 		}
 		if err := c.Validate(); err == nil {
 			c.setLogLevel()
