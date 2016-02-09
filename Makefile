@@ -1,6 +1,7 @@
 APPENV := testenv
 
-build: fmt $(APPENV)
+build: deps
+	fmt $(APPENV)
 	docker run \
 		--link hugs_postgres_1:postgres \
 		--env-file ./$(APPENV) \
@@ -11,6 +12,12 @@ build: fmt $(APPENV)
 
 fmt:
 	@gofmt -w src/
+
+deps:
+	docker-compose stop
+	docker-compose rm -f
+	docker-compose up -d
+	docker run --link hugs_postgres_1:postgres aanand/wait
 
 migrate:
 	migrate -url $(HUGS_POSTGRES_CONN) -path ./migrations up

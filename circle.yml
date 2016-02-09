@@ -9,7 +9,7 @@ dependencies:
     - docker info
     - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD quay.io
     - docker pull quay.io/opsee/build-go:go15
-    - sudo pip install --upgrade docker-compose==1.5.2 && docker-compose up -d
+    - sudo pip install --upgrade docker-compose==1.5.2
     - git submodule update --init
 test:
   override:
