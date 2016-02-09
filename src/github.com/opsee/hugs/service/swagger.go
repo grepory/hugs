@@ -273,7 +273,7 @@ var swaggerMap = j{
 	"definitions": j{
 		"Notifications": j{
 			"properties": j{
-				"check-id": j{
+				"check_id": j{
 					"type": "string",
 				},
 				"notifications": j{
@@ -284,7 +284,7 @@ var swaggerMap = j{
 				},
 			},
 			"required": k{
-				"check-id",
+				"check_id",
 				"notifications",
 			},
 			"type": "object",

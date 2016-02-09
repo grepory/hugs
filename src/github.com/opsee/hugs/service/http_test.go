@@ -234,7 +234,7 @@ func TestPostNotifications(t *testing.T) {
 }
 
 func TestGetNotificationsByCheckID(t *testing.T) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/00002", Common.Service.config.PublicHost), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/00000", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestGetNotificationsByCheckID(t *testing.T) {
 
 	log.Info(resp)
 
-	assert.Equal(t, 1, len(resp.Notifications))
+	assert.Equal(t, 3, len(resp.Notifications))
 }
 
 func TestPutNotification(t *testing.T) {

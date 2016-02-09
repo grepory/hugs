@@ -110,6 +110,7 @@ func (s *Service) postNotifications() tp.HandleFunc {
 		for _, n := range request.Notifications {
 			n.CustomerID = user.CustomerID
 			n.UserID = user.ID
+			n.CheckID = request.CheckID
 		}
 
 		err := s.db.PutNotifications(user, request.Notifications)
@@ -137,7 +138,7 @@ func (s *Service) deleteNotificationsByCheckID() tp.HandleFunc {
 		}
 
 		if checkID == "" {
-			return ctx, http.StatusBadRequest, errors.New("Must specify check-id in request.")
+			return ctx, http.StatusBadRequest, errors.New("Must specify check_id in request.")
 		}
 
 		// Get notifications by checkID and then call delete on each one
