@@ -52,17 +52,18 @@ func (s *Service) NewRouter() *tp.Router {
 	)
 
 	rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
+	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
+	rtr.Handle("POST", "/services/slack/test", decoders(com.User{}, obj.Notifications{}), s.postSlackTest())
+	rtr.Handle("POST", "/services/email/test", decoders(com.User{}, obj.Notifications{}), s.postEmailTest())
+	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
+	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
+	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
+
 	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
 	rtr.Handle("POST", "/notifications", decoders(com.User{}, obj.Notifications{}), s.postNotifications())
 	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckID())
 	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
 	rtr.Handle("PUT", "/notifications/:check_id", decoders(com.User{}, obj.Notifications{}), s.putNotificationsByCheckID())
-	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
-	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
-	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
-	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
-	rtr.Handle("POST", "/services/slack/test", decoders(com.User{}, obj.Notifications{}), s.postSlackTest())
-	rtr.Handle("POST", "/services/email/test", decoders(com.User{}, obj.Notifications{}), s.postEmailTest())
 
 	rtr.Timeout(5 * time.Minute)
 
@@ -119,7 +120,17 @@ func (s *Service) postNotifications() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, err
 		}
 
-		return ctx, http.StatusOK, nil
+		result, err := s.db.GetNotificationsByCheckID(user, request.CheckID)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Failed to get notifications.")
+		}
+
+		notifs := &obj.Notifications{
+			CheckID:       request.CheckID,
+			Notifications: result,
+		}
+
+		return notifs, http.StatusCreated, nil
 	}
 }
 
@@ -194,7 +205,7 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		params, ok := ctx.Value(paramsKey).(httprouter.Params)
@@ -203,12 +214,18 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 		}
 
 		if checkID == "" {
-			return ctx, http.StatusBadRequest, errors.New("Must specify check-id in request.")
+			return nil, http.StatusBadRequest, errors.New("Must specify check-id in request.")
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
-			return ctx, http.StatusBadRequest, errUnknown
+			return nil, http.StatusBadRequest, errUnknown
+		}
+
+		// First delete notifications for this check
+		err := s.db.DeleteNotificationsByCheckId(user, checkID)
+		if err != nil {
+			return nil, http.StatusInternalServerError, err
 		}
 
 		// Set notification userID and customerID
@@ -218,12 +235,11 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 			n.CheckID = checkID
 		}
 
-		err := s.db.PutNotifications(user, request.Notifications)
-		if err != nil {
-			return ctx, http.StatusBadRequest, err
+		if err := s.db.PutNotifications(user, request.Notifications); err != nil {
+			return nil, http.StatusInternalServerError, err
 		}
 
-		return nil, http.StatusOK, nil
+		return &obj.Notifications{checkID, request.Notifications}, http.StatusCreated, nil
 
 	}
 }

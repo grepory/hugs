@@ -230,7 +230,7 @@ func TestPostNotifications(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
-	assert.Equal(t, http.StatusOK, rw.Code)
+	assert.Equal(t, http.StatusCreated, rw.Code)
 }
 
 func TestGetNotificationsByCheckID(t *testing.T) {
@@ -287,7 +287,7 @@ func TestPutNotification(t *testing.T) {
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
-	assert.Equal(t, http.StatusOK, rw.Code)
+	assert.Equal(t, http.StatusCreated, rw.Code)
 }
 
 func TestGetNotificationsByCheckID666(t *testing.T) {

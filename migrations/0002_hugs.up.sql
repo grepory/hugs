@@ -1,0 +1,2 @@
+ALTER TABLE slack_oauth_responses DROP CONSTRAINT slack_oauth_responses_customer_id_fkey;
+DROP TABLE customers;
