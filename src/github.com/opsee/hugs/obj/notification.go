@@ -6,7 +6,7 @@ import (
 )
 
 type Notifications struct {
-	CheckID       string          `json:"check_id"`
+	CheckID       string          `json:"check-id"`
 	Notifications []*Notification `json:"notifications" db:"notifications"`
 }
 
