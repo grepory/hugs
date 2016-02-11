@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +22,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func startSlackAPIEmulator() {
+func webhooktest(rw http.ResponseWriter, req *http.Request) {
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Error(err)
+	} else {
+		log.Info("Test webhook endpoint got: ", string(body))
+	}
+}
+
+// emulates slack api endpoints, provides endpoint for /services/webhook/test
+func startTestServer() {
 	oaResponse := &obj.SlackOAuthResponse{
 		AccessToken: "test",
 		Scope:       "test",
@@ -42,9 +53,11 @@ func startSlackAPIEmulator() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// emulate slack oauth endpoint
 	http.HandleFunc("/api/oauth.access", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, string(oaResponseData), r.URL.Path)
 	})
+	http.HandleFunc("/hook", webhooktest)
 
 	log.Fatal(http.ListenAndServe(":7766", nil))
 }
@@ -134,14 +147,14 @@ func NewServiceTest() *ServiceTest {
 				UserID:     13,
 				CheckID:    "00000",
 				Value:      "someslackhook.com",
-				Type:       "slack_hook",
+				Type:       "web_hook",
 			},
 		},
 	}
 
 	serviceTest.Service.router = serviceTest.Router
 	log.Info("Starting slack api emulator...")
-	go startSlackAPIEmulator()
+	go startTestServer()
 
 	log.Info("Adding initial notifications to obj...")
 	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
@@ -427,6 +440,7 @@ func TestPostSlackTest(t *testing.T) {
 	log.Info(string(rw.Body.Bytes()))
 	assert.Equal(t, http.StatusOK, rw.Code)
 }
+
 func TestPostEmailTest(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
@@ -460,3 +474,35 @@ func TestPostEmailTest(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rw.Code)
 }
 */
+func TestPostWebHookTest(t *testing.T) {
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
+				ID:         0,
+				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserID:     13,
+				CheckID:    "00002",
+				Value:      "http://localhost:7766/hook",
+				Type:       "web_hook",
+			}},
+	}
+
+	notifs, err := json.Marshal(cn)
+	if err != nil {
+		t.FailNow()
+	}
+
+	rdr := bytes.NewBufferString(string(notifs))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/services/webhook/test", Common.Service.config.PublicHost), rdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+	log.Info(string(rw.Body.Bytes()))
+	assert.Equal(t, http.StatusOK, rw.Code)
+}

@@ -3,6 +3,7 @@ package obj
 import (
 	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/util"
+	log "github.com/sirupsen/logrus"
 )
 
 type NocapResponse struct {
@@ -22,6 +23,18 @@ func (this *Event) Validate() error {
 }
 
 func GenerateTestEvent() *Event {
+
+	httpResponse := &checker.HttpResponse{
+		Code: 200,
+		Body: "test",
+		Host: "a host",
+	}
+
+	responseAny, err := checker.MarshalAny(httpResponse)
+	if err != nil {
+		log.WithFields(log.Fields{"service": "GenerateTestEvent", "error": err}).Error("Error marshalling HttpResponse.")
+	}
+
 	checkResult := &checker.CheckResult{
 		CheckId:   "00002",
 		CheckName: `Test Check`,
@@ -33,12 +46,13 @@ func GenerateTestEvent() *Event {
 				Target: &checker.Target{
 					Id: "test-target",
 				},
+				Response: responseAny,
+				Passing:  true,
 			},
 		},
 		Passing: true,
 		Version: 1,
 	}
-
 	event := &Event{
 		Result: checkResult,
 		Nocap: &NocapResponse{

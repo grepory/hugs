@@ -55,6 +55,7 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
 	rtr.Handle("POST", "/services/slack/test", decoders(com.User{}, obj.Notifications{}), s.postSlackTest())
 	rtr.Handle("POST", "/services/email/test", decoders(com.User{}, obj.Notifications{}), s.postEmailTest())
+	rtr.Handle("POST", "/services/webhook/test", decoders(com.User{}, obj.Notifications{}), s.postWebHookTest())
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
 	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
@@ -426,6 +427,42 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 		err = slackSender.Send(request.Notifications[0], event)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackTest", "error": err}).Error("Error sending notification to slack")
+			return ctx, http.StatusBadRequest, err
+		}
+
+		return nil, http.StatusOK, nil
+	}
+}
+
+func (s *Service) postWebHookTest() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		webHookSender, err := notifier.NewWebHookSender()
+		if err != nil {
+			log.WithError(err).Error("Couldn't get web hook sender")
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		if len(request.Notifications) < 1 {
+			log.WithFields(log.Fields{"service": "postWebHookTest"}).Error("Invalid notification")
+			return ctx, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
+		}
+
+		event := obj.GenerateTestEvent()
+		request.Notifications[0].CustomerID = user.CustomerID
+
+		err = webHookSender.Send(request.Notifications[0], event)
+		if err != nil {
+			log.WithError(err).Error("Error sending notification to endpoint")
 			return ctx, http.StatusBadRequest, err
 		}
 
