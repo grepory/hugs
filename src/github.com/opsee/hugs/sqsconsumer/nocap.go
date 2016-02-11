@@ -31,6 +31,8 @@ func buildEvent(n *obj.Notification, result *checker.CheckResult) *obj.Event {
 			event.Nocap = resp
 			log.WithFields(log.Fields{"nocap": resp}).Info("Got nocap response")
 		}
+	} else {
+		log.Info("No notificaption endpoint configured.")
 	}
 
 	return event
