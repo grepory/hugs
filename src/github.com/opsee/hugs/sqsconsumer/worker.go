@@ -127,6 +127,10 @@ func (w *Worker) Work() {
 		event := buildEvent(notifications[0], result)
 
 		doDelete := false
+		if len(notifications) == 0 {
+			doDelete = true
+		}
+
 		for _, notification := range notifications {
 			// Send notification with Notifier
 			sendErr := w.Notifier.Send(notification, event)

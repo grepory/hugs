@@ -2,16 +2,11 @@ package sqsconsumer
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/opsee/basic/com"
 	"github.com/opsee/hugs/checker"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
@@ -29,7 +24,7 @@ func buildEvent(n *obj.Notification, result *checker.CheckResult) *obj.Event {
 	// an event with the CheckResult, because workers should be able to handle
 	// not having the Notificaption data.
 	if notifEndpoint := config.GetConfig().NotificaptionEndpoint; notifEndpoint != "" {
-		resp, err := getNocapResponse(n, result)
+		resp, err := getNocapResponse(notifEndpoint, result)
 		if err != nil {
 			log.WithFields(log.Fields{"err": err}).Error("Error getting Notificaption data")
 		} else {
@@ -41,81 +36,40 @@ func buildEvent(n *obj.Notification, result *checker.CheckResult) *obj.Event {
 	return event
 }
 
-func getNocapResponse(n *obj.Notification, result *checker.CheckResult) (*obj.NocapResponse, error) {
-	if notifEndpoint := config.GetConfig().NotificaptionEndpoint; notifEndpoint != "" {
-		user := &com.User{
-			ID:         n.UserID,
-			CustomerID: n.CustomerID,
-			Verified:   true,
-			Active:     true,
-		}
-		uBytes, err := json.Marshal(user)
-		if err != nil {
-			return nil, err
-		}
-		base64User := base64.StdEncoding.EncodeToString(uBytes)
-
-		checkPath := strings.Join([]string{
-			config.GetConfig().BartnetEndpoint,
-			"checks",
-			result.CheckId,
-		}, "/")
-
-		// shared http client comes from notifier.go
-		req, err := http.NewRequest("GET", checkPath, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", base64User))
-		req.Header.Add("Accept", "application/x-protobuf")
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		checkBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		check := &checker.Check{}
-		if err := proto.Unmarshal(checkBytes, check); err != nil {
-			return nil, err
-		}
-		log.WithFields(log.Fields{"check": check.String()}).Info("Got check from Bartnet")
-
-		body := bytes.NewBuffer(checkBytes)
-
-		req, err = http.NewRequest(
-			"POST",
-			strings.Join([]string{
-				notifEndpoint,
-				"screenshot",
-			}, "/"),
-			body)
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err = httpClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		notifData := &obj.NocapResponse{}
-		if err := json.Unmarshal(bodyBytes, notifData); err != nil {
-			return nil, err
-		}
-		log.WithFields(log.Fields{"response": notifData}).Info("Got response from Notificaption")
-
-		return notifData, nil
+func getNocapResponse(nocapEndpoint string, result *checker.CheckResult) (*obj.NocapResponse, error) {
+	checkBytes, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("No notificaption endpoint configured")
+
+	body := bytes.NewBuffer(checkBytes)
+
+	req, err := http.NewRequest(
+		"POST",
+		strings.Join([]string{
+			nocapEndpoint,
+			"screenshot",
+		}, "/"),
+		body)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	notifData := &obj.NocapResponse{}
+	if err := json.Unmarshal(bodyBytes, notifData); err != nil {
+		return nil, err
+	}
+	log.WithFields(log.Fields{"response": notifData}).Info("Got response from Notificaption")
+
+	return notifData, nil
 }
