@@ -8,7 +8,7 @@ var CheckPassing = `{
     {
       "pretext": "Passing check",
       "title": "{{check_name}} passing in {{group_name}}",
-      "title_link": "https://app.opsee.com",
+      "title_link": "https://app.opsee.com/check/{{check_id}}",
       "text": "{{instance_count}} Passing",
       "color": "#69a92c"
     }
