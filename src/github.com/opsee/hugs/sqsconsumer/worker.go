@@ -128,6 +128,7 @@ func (w *Worker) Work() {
 
 		doDelete := false
 		if len(notifications) == 0 {
+			log.WithFields(log.Fields{"worker": w.ID, "check": result.CheckID}).Info("Deleting check with no notifications.")
 			doDelete = true
 		}
 
