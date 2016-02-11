@@ -43,49 +43,6 @@ func buildEvent(n *obj.Notification, result *checker.CheckResult) *obj.Event {
 
 func getNocapResponse(n *obj.Notification, result *checker.CheckResult) (*obj.NocapResponse, error) {
 	if notifEndpoint := config.GetConfig().NotificaptionEndpoint; notifEndpoint != "" {
-		user := &com.User{
-			ID:         n.UserID,
-			CustomerID: n.CustomerID,
-			Verified:   true,
-			Active:     true,
-		}
-		uBytes, err := json.Marshal(user)
-		if err != nil {
-			return nil, err
-		}
-		base64User := base64.StdEncoding.EncodeToString(uBytes)
-
-		checkPath := strings.Join([]string{
-			config.GetConfig().BartnetEndpoint,
-			"checks",
-			result.CheckId,
-		}, "/")
-
-		// shared http client comes from notifier.go
-		req, err := http.NewRequest("GET", checkPath, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", base64User))
-		req.Header.Add("Accept", "application/x-protobuf")
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		checkBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		check := &checker.Check{}
-		if err := proto.Unmarshal(checkBytes, check); err != nil {
-			return nil, err
-		}
-		log.WithFields(log.Fields{"check": check.String()}).Info("Got check from Bartnet")
-
 		body := bytes.NewBuffer(checkBytes)
 
 		req, err = http.NewRequest(
