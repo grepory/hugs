@@ -8,7 +8,6 @@ echo "drop database hugs_test" | psql $HUGS_POSTGRES_CONN
 echo "create database hugs_test" | psql $HUGS_POSTGRES_CONN
 
 migrate -url $HUGS_POSTGRES_CONN -path ./migrations up
-echo "loading fixtures" | psql $HUGS_POSTGRES_CONN -f fixtures.sql hugs_test
 
 checker_proto=proto/bastion_proto/checker.proto
 
