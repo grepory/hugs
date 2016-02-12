@@ -73,5 +73,9 @@ func getNocapResponse(nocapEndpoint string, result *checker.CheckResult) (*obj.N
 	}
 	log.WithFields(log.Fields{"response": notifData}).Info("Got response from Notificaption")
 
+	if len(notifData.Images) == 0 {
+		return nil, errors.New("Nocap response contains no images")
+	}
+
 	return notifData, nil
 }
