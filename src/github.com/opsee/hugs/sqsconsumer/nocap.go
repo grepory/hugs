@@ -63,15 +63,14 @@ func getNocapResponse(nocapEndpoint string, result *checker.CheckResult) (*obj.N
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode >= 300 {
-		err := errors.New("Error submitting CheckResult to notificaption")
-		log.WithFields(log.Fields{"check_result": result.String(), "request_body": string(checkBytes)}).Error(err.Error())
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode >= 300 {
+		err := errors.New("Error submitting CheckResult to notificaption")
+		log.WithFields(log.Fields{"check_result": result.String(), "request_body": string(checkBytes), "response": string(bodyBytes), "status_code": resp.StatusCode}).Error(err.Error())
 		return nil, err
 	}
 	notifData := &obj.NocapResponse{}
