@@ -3,6 +3,7 @@ package sqsconsumer
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
