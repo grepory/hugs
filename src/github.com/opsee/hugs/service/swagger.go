@@ -100,6 +100,31 @@ var swaggerMap = j{
 			},
 		},
 
+		"/services/webhook/test": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "Notifications",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema":      j{},
+					},
+				},
+				"summary": "Test alert on a notification",
+				"tags":    k{"notifications"},
+			},
+		},
+
 		"/services/slack/channels": j{
 			"get": j{
 				"parameters": []j{},

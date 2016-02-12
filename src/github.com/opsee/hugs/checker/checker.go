@@ -1,5 +1,57 @@
 package checker
 
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/golang/protobuf/proto"
+	log "github.com/sirupsen/logrus"
+)
+
+var (
+	registry = make(map[string]reflect.Type)
+)
+
+func init() {
+	registry["HttpCheck"] = reflect.TypeOf(HttpCheck{})
+	registry["HttpResponse"] = reflect.TypeOf(HttpResponse{})
+}
+
+func UnmarshalAny(any *Any) (interface{}, error) {
+	class := any.TypeUrl
+	bytes := any.Value
+
+	instance := reflect.New(registry[class]).Interface()
+	err := proto.Unmarshal(bytes, instance.(proto.Message))
+	if err != nil {
+		log.WithError(err).Error("Couldn't unmarshal any: ", any.String())
+		return nil, err
+	}
+	log.WithFields(log.Fields{"service": "checker", "event": "unmarshal successful"}).Debug("unmarshaled Any to: ", instance)
+
+	return instance, nil
+}
+
+func MarshalAny(i interface{}) (*Any, error) {
+	msg, ok := i.(proto.Message)
+	if !ok {
+		err := fmt.Errorf("Unable to convert to proto.Message: %v", i)
+		log.WithFields(log.Fields{"service": "checker", "event": "marshalling error"}).Error(err.Error())
+		return nil, err
+	}
+	bytes, err := proto.Marshal(msg)
+
+	if err != nil {
+		log.WithFields(log.Fields{"service": "checker", "event": "marshalling error"}).Error(err.Error())
+		return nil, err
+	}
+
+	return &Any{
+		TypeUrl: reflect.ValueOf(i).Elem().Type().Name(),
+		Value:   bytes,
+	}, nil
+}
+
 func (r *CheckResult) filterResponses(passing bool) []*CheckResponse {
 	responses := []*CheckResponse{}
 	if r != nil {
