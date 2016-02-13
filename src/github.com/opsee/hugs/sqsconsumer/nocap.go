@@ -57,6 +57,7 @@ func getNocapResponse(nocapEndpoint string, result *checker.CheckResult) (*obj.N
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
