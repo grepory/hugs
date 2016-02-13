@@ -7,7 +7,7 @@ import (
 )
 
 type NocapResponse struct {
-	Images  map[string]string `json:"images"`
+	Images  map[string]string `json:"image_urls"`
 	JSONUrl string            `json:"json_url"`
 }
 
