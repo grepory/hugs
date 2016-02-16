@@ -71,13 +71,10 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	if e.Nocap != nil {
 		nocap := e.Nocap
 		templateContent["json_url"] = nocap.JSONUrl
-		// TODO(greg): The images will have sizes in nocap response soon.
-		templateContent["img_400"] = nocap.Images["400"]
-		templateContent["img_800"] = nocap.Images["800"]
 		if result.Passing {
-			templateName = "check-pass-image"
+			templateName = "check-pass-json"
 		} else {
-			templateName = "check-fail-image"
+			templateName = "check-fail-json"
 		}
 	} else {
 		if result.Passing {
