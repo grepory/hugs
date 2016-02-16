@@ -147,7 +147,7 @@ func NewServiceTest() *ServiceTest {
 				UserID:     13,
 				CheckID:    "00000",
 				Value:      "someslackhook.com",
-				Type:       "web_hook",
+				Type:       "webhook",
 			},
 		},
 	}
@@ -483,7 +483,7 @@ func TestPostWebHookTest(t *testing.T) {
 				UserID:     13,
 				CheckID:    "00002",
 				Value:      "http://localhost:7766/hook",
-				Type:       "web_hook",
+				Type:       "webhook",
 			}},
 	}
 

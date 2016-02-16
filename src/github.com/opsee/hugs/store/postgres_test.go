@@ -59,7 +59,7 @@ func NewStoreTest() *StoreTest {
 				UserID:     13,
 				CheckID:    "00001",
 				Value:      "fuck",
-				Type:       "web_hook",
+				Type:       "webhook",
 			},
 		},
 	}

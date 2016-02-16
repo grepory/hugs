@@ -31,7 +31,7 @@ func TestWebHookNotifier(t *testing.T) {
 		UserID:     13,
 		CheckID:    "test",
 		Value:      "http://localhost:8888/hook",
-		Type:       "web_hook",
+		Type:       "webhook",
 	}
 	event := obj.GenerateTestEvent()
 
