@@ -28,9 +28,9 @@ func NewNotifier() (*Notifier, map[string]error) {
 	// try add slack webhook sender
 	webHookSender, err := NewWebHookSender()
 	if err != nil {
-		errMap["web_hook"] = err
+		errMap["webhook"] = err
 	} else {
-		notifier.addSender("web_hook", webHookSender)
+		notifier.addSender("webhook", webHookSender)
 	}
 
 	// try add slack bot sender
