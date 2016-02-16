@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -50,6 +51,20 @@ func MarshalAny(i interface{}) (*Any, error) {
 		TypeUrl: reflect.ValueOf(i).Elem().Type().Name(),
 		Value:   bytes,
 	}, nil
+}
+
+func (a *Any) MarshalJSON() ([]byte, error) {
+	obj, err := UnmarshalAny(a)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	bytes, err := json.Marshal(obj)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return bytes, nil
 }
 
 func (r *CheckResult) filterResponses(passing bool) []*CheckResponse {
