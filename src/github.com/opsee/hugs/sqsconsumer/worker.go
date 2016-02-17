@@ -119,11 +119,6 @@ func (w *Worker) Work() {
 			continue
 		}
 
-		if len(notifications) < 1 {
-			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: No notifications for event.")
-			continue
-		}
-
 		event := buildEvent(notifications[0], result)
 
 		doDelete := false
