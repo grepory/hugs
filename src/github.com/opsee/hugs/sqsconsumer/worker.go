@@ -119,23 +119,24 @@ func (w *Worker) Work() {
 			continue
 		}
 
-		event := buildEvent(notifications[0], result)
-
 		doDelete := false
-		if len(notifications) == 0 {
+		if len(notifications) < 1 {
 			log.WithFields(log.Fields{"worker": w.ID, "check": result.CheckId}).Info("Deleting check with no notifications.")
 			doDelete = true
-		}
+		} else {
 
-		for _, notification := range notifications {
-			// Send notification with Notifier
-			sendErr := w.Notifier.Send(notification, event)
-			if sendErr != nil {
-				log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
-			} else {
-				// If we successfully send one notification, then we're going to delete the SQS Message.
-				// TODO(greg): Separate queues per notification type.
-				doDelete = true
+			event := buildEvent(notifications[0], result)
+
+			for _, notification := range notifications {
+				// Send notification with Notifier
+				sendErr := w.Notifier.Send(notification, event)
+				if sendErr != nil {
+					log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
+				} else {
+					// If we successfully send one notification, then we're going to delete the SQS Message.
+					// TODO(greg): Separate queues per notification type.
+					doDelete = true
+				}
 			}
 		}
 
