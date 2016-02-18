@@ -32,6 +32,7 @@ type Config struct {
 	AWSSession            *session.Session
 	NotificaptionEndpoint string
 	BartnetEndpoint       string
+	YellerAPIKey          string
 }
 
 func (this *Config) Validate() error {
@@ -91,6 +92,7 @@ func GetConfig() *Config {
 			SlackTestClientSecret: os.Getenv("HUGS_TEST_SLACK_CLIENT_SECRET"),
 			NotificaptionEndpoint: os.Getenv("HUGS_NOTIFICAPTION_ENDPOINT"),
 			BartnetEndpoint:       os.Getenv("HUGS_BARTNET_ENDPOINT"),
+			YellerAPIKey:          os.Getenv("HUGS_YELLER_API_KEY"),
 		}
 		if err := c.Validate(); err == nil {
 			c.setLogLevel()

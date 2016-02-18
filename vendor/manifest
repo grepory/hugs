@@ -195,6 +195,12 @@
 			"path": "/assert"
 		},
 		{
+			"importpath": "github.com/yeller/yeller-golang",
+			"repository": "https://github.com/yeller/yeller-golang",
+			"revision": "7d011e7495dbaeef45206820b4945233f986945d",
+			"branch": "master"
+		},
+		{
 			"importpath": "golang.org/x/crypto/bcrypt",
 			"repository": "https://go.googlesource.com/crypto",
 			"revision": "3760e016850398b85094c4c99e955b8c3dea5711",
