@@ -19,6 +19,11 @@ func init() {
 }
 
 func UnmarshalAny(any *Any) (interface{}, error) {
+	if any == nil {
+		log.Error("Couldn't unmarshal nil any")
+		return nil, fmt.Errorf("Error nil any")
+	}
+
 	class := any.TypeUrl
 	bytes := any.Value
 
