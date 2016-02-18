@@ -3,6 +3,7 @@ package sqsconsumer
 import (
 	//"encoding/json"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
+	"github.com/yeller/yeller-golang"
 )
 
 var (
@@ -65,6 +67,29 @@ func (w *Worker) Start() {
 	}
 }
 
+func (w *Worker) deleteMessage(handle *string) error {
+	var err error
+
+	if handle == nil {
+		return errors.New("No message handle for SQS message")
+	}
+
+	// TODO(dan) we can't wait too long here or the message will become visible again.
+	deleteMessageInput := &sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(w.SQSUrl),
+		ReceiptHandle: handle,
+	}
+
+	for deleteTry := 1; deleteTry < 5; deleteTry++ {
+		_, err = w.SQS.DeleteMessage(deleteMessageInput)
+		if err != nil {
+			time.Sleep((1 << uint(deleteTry+1)) * time.Millisecond * 10)
+		}
+	}
+
+	return err
+}
+
 func (w *Worker) Work() {
 	log.WithFields(log.Fields{"worker": w.ID}).Info("Doing work...")
 
@@ -101,13 +126,24 @@ func (w *Worker) Work() {
 		bodyBytes, err := base64.StdEncoding.DecodeString(*message.Body)
 		if err != nil {
 			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot decode message body")
-			continue
+			info := make(map[string]interface{})
+			info["message"] = string(bodyBytes)
+			yeller.NotifyInfo(err, info)
+			if err := w.deleteMessage(message.ReceiptHandle); err != nil {
+				log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+			}
 		}
+
 		result := &checker.CheckResult{}
 		err = proto.Unmarshal(bodyBytes, result)
 		if err != nil {
 			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot unmarshal message body")
-			continue
+			info := make(map[string]interface{})
+			info["message"] = string(bodyBytes)
+			yeller.NotifyInfo(err, info)
+			if err := w.deleteMessage(message.ReceiptHandle); err != nil {
+				log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+			}
 		}
 		log.WithFields(log.Fields{"worker": w.ID, "CheckResult": result.String()}).Info("Unmarshalled CheckResult.")
 
@@ -116,13 +152,17 @@ func (w *Worker) Work() {
 			//TODO(dan) send message back to sqs if you can't get notifications
 			// OR send notification to seperate SQS queue for redelivery
 			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: Couldn't get notifications for event.")
+			info := make(map[string]interface{})
+			info["message"] = string(bodyBytes)
+			yeller.NotifyInfo(err, info)
 			continue
 		}
 
-		doDelete := false
 		if len(notifications) < 1 {
 			log.WithFields(log.Fields{"worker": w.ID, "check": result.CheckId}).Info("Deleting check with no notifications.")
-			doDelete = true
+			if err := w.deleteMessage(message.ReceiptHandle); err != nil {
+				log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+			}
 		} else {
 
 			event := buildEvent(notifications[0], result)
@@ -135,28 +175,10 @@ func (w *Worker) Work() {
 				} else {
 					// If we successfully send one notification, then we're going to delete the SQS Message.
 					// TODO(greg): Separate queues per notification type.
-					doDelete = true
+					if err := w.deleteMessage(message.ReceiptHandle); err != nil {
+						log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+					}
 				}
-			}
-		}
-
-		if doDelete {
-			// TODO(dan) we can't wait too long here or the message will become visible again.
-			deleteMessageInput := &sqs.DeleteMessageInput{
-				QueueUrl:      aws.String(w.SQSUrl),
-				ReceiptHandle: message.ReceiptHandle,
-			}
-			deletedMessage := false
-			for deleteTry := 1; deleteTry < 5; deleteTry++ {
-				_, err := w.SQS.DeleteMessage(deleteMessageInput)
-				if err == nil {
-					deletedMessage = true
-					break
-				}
-				time.Sleep((1 << uint(deleteTry+1)) * time.Millisecond * 10)
-			}
-			if deletedMessage == false {
-				log.WithFields(log.Fields{"worker": w.ID, "message": message}).Error("Couldn't delete message from queue.")
 			}
 		}
 	}
