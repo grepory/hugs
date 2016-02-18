@@ -59,12 +59,12 @@ func NewWorker(ID string, maxErr int, sqsUrl string) (*Worker, error) {
 
 func (w *Worker) Start() {
 	log.WithFields(log.Fields{"worker": w.ID}).Info("Starting up.")
+
 	for {
 		w.Work()
 	}
 }
 
-// TODO(greg): We need to be deleting messages from the queue. As it stands, we're just requeueing them over and over again.
 func (w *Worker) Work() {
 	log.WithFields(log.Fields{"worker": w.ID}).Info("Doing work...")
 
@@ -76,7 +76,7 @@ func (w *Worker) Work() {
 	message, err := w.SQS.ReceiveMessage(input)
 
 	if err != nil {
-		log.WithFields(log.Fields{"worker": w.ID, "err": err}).Error("Encountered error.  Sleeping...")
+		log.WithError(err).WithFields(log.Fields{"worker": w.ID}).Error("Encountered error polling SQS.  Sleeping...")
 
 		w.errCount += 1
 		if w.errCount >= w.errCountThreshold {
