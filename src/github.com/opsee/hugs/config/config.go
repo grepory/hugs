@@ -15,24 +15,46 @@ import (
 
 // TODO(dan) consider splitting this into configs and testconfigs for each module
 type Config struct {
-	PublicHost            string `required:"true"`
-	PostgresConn          string `required:"true"`
-	SqsUrl                string `required:"true"`
-	AWSRegion             string `required:"true"`
-	OpseeHost             string `required:"true"`
-	MandrillApiKey        string `required:"true"`
-	VapeEndpoint          string `required:"true"`
-	VapeKey               string `required:"true"`
-	LogLevel              string
-	SlackClientSecret     string `required:"true"`
-	SlackClientID         string `required:"true"`
-	SlackTestToken        string
+	// PublicHost specifies the listen address for the API
+	PublicHost string `required:"true"`
+	// PostgresConn is the Postgres connection string for the hugs database
+	// e.g. postgres://user:pass@localhost/dbname
+	PostgresConn string `required:"true"`
+	// SqsUrl is the fully qualified HTTP endpoint for SQS where Hugs listens
+	// for messages.
+	SqsUrl string `required:"true"`
+	// AWSRegion is the region of AWS where this instance of Hugs is operating.
+	AWSRegion string `required:"true"`
+	// OpseeHost is the public API endpoint for Opsee. This is used in notification
+	// templates.
+	OpseeHost string `required:"true"`
+	// MandrillApiKey is the Mandrill API Key used for sending e-mail.
+	MandrillApiKey string `required:"true"`
+	// These two may not even be used.
+	VapeEndpoint string `required:"true"`
+	VapeKey      string `required:"true"`
+	// LogLevel specifies the verbosity of hugs logging.
+	LogLevel string
+	// SlackClientSecret is the hugs Slack secret used during OAuth setup.
+	SlackClientSecret string `required:"true"`
+	// SlackClientID is used during OAuth setup.
+	SlackClientID string `required:"true"`
+	// SlackTestToken is used during Slack integration setup.
+	SlackTestToken string
+	// SlackTestClientSecret is used when running tests to test the slack
+	// integration.
 	SlackTestClientSecret string
-	SlackTestClientID     string
-	AWSSession            *session.Session
+	// SlackTestClientID is used when running tests to test the slack
+	// integration.
+	SlackTestClientID string
+	// AWSSession is the shared `aws.Session` object used by all of the hugs components.
+	AWSSession *session.Session
+	// NotificaptionEndpoint is the URL of the notificaption service.
 	NotificaptionEndpoint string
-	BartnetEndpoint       string
-	YellerAPIKey          string
+	// BartnetEndpoint is the URL of bartnet
+	BartnetEndpoint string
+	// YellerAPIKey is the API key used to report errors to the Yeller app
+	YellerAPIKey string
 }
 
 func (this *Config) Validate() error {
