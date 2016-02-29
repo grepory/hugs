@@ -2,6 +2,7 @@ package obj
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
 	"net/http"
 	"net/url"
@@ -10,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx/types"
 	"github.com/nlopes/slack"
 	"github.com/opsee/hugs/util"
+	log "github.com/sirupsen/logrus"
 )
 
 // helper message to escape
@@ -135,6 +137,12 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 		return nil, err
 	}
 
+	if !slackResponse.OK {
+		err = fmt.Errorf("Slack Error: %s", slackResponse.Error)
+		log.WithError(err).Error("Slack oauth.access failed.")
+		return nil, err
+	}
+
 	return slackResponse, nil
 }
 
@@ -192,11 +200,6 @@ func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMess
 	values.Set("icon_url", this.IconURL)
 	values.Set("parse", "full")
 
-	//values.Set("unfurl_links", "true")
-	//values.Set("unfurl_media", "false")
-	//values.Set("icon_emoji", this.IconEmoji)
-	//values.Set("escape_text", "false")
-
 	resp, err := http.PostForm(endpoint, values)
 	if err != nil {
 		return nil, err
@@ -207,6 +210,12 @@ func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMess
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&slackResponse)
 	if err != nil {
+		return nil, err
+	}
+
+	if !slackResponse.OK {
+		err = fmt.Errorf("Slack Error: %s", slackResponse.Error)
+		log.WithError(err).Error("Slack chat.postMessage failed.")
 		return nil, err
 	}
 
