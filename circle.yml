@@ -13,7 +13,7 @@ dependencies:
     - git submodule update --init
 test:
   override:
-    - APPENV=testenv make build
+    - APPENV=testenv make docker
     - docker tag quay.io/opsee/hugs quay.io/opsee/hugs:$CIRCLE_SHA1
     - docker push quay.io/opsee/hugs:$CIRCLE_SHA1
 deployment:

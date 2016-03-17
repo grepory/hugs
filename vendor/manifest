@@ -150,7 +150,7 @@
 		{
 			"importpath": "github.com/nlopes/slack",
 			"repository": "https://github.com/nlopes/slack",
-			"revision": "fecd1dd0008dcb1a01e18b900b1abd4fd4e79177",
+			"revision": "5e8064e706a2cb3d2581c1298d9428db2c0984fa",
 			"branch": "master"
 		},
 		{

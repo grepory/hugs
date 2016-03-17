@@ -128,6 +128,7 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	slackResponse := &SlackOAuthResponse{}
 
@@ -204,6 +205,7 @@ func (this *SlackPostChatMessageRequest) Do(endpoint string) (*SlackPostChatMess
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	slackResponse := &SlackPostChatMessageResponse{}
 

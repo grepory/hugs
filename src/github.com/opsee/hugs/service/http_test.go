@@ -13,6 +13,7 @@ import (
 
 	"os"
 
+	"github.com/nlopes/slack"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
@@ -357,7 +358,7 @@ func TestGetSlackChannels(t *testing.T) {
 
 }
 
-func TestGetSlackToken(t *testing.T) {
+func TestGetSlackInfo(t *testing.T) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/services/slack", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -369,14 +370,16 @@ func TestGetSlackToken(t *testing.T) {
 
 	Common.Service.router.ServeHTTP(rw, req)
 
-	var resp obj.SlackOAuthResponse
+	var resp slack.TeamInfo
 
 	err = json.Unmarshal(rw.Body.Bytes(), &resp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	log.WithFields(log.Fields{"TestGetSlackToken": "Got slack token."}).Info(resp)
+	assert.Equal(t, "opsee", resp.Domain, "test that the team info includes the appropriate domain")
+
+	log.WithFields(log.Fields{"TestGetTeamInfo": "Got team info."}).Info(resp)
 	assert.Equal(t, http.StatusOK, rw.Code)
 }
 
