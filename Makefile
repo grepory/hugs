@@ -8,8 +8,6 @@ build: deps
 		-e "TARGETS=linux/amd64" \
 		-v `pwd`:/build \
 		quay.io/opsee/build-go:go15
-
-docker: build
 	docker build -t quay.io/opsee/hugs:latest .
 
 fmt:

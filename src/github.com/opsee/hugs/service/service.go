@@ -58,7 +58,7 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("POST", "/services/webhook/test", decoders(com.User{}, obj.Notifications{}), s.postWebHookTest())
 	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
-	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackInfo())
+	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
 
 	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
 	rtr.Handle("POST", "/notifications", decoders(com.User{}, obj.Notifications{}), s.postNotifications())
@@ -81,13 +81,13 @@ func (s *Service) getNotifications() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		notifications, err := s.db.GetNotifications(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getNotifications", "error": err}).Error("Couldn't get notifications from database.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		response := &obj.Notifications{Notifications: notifications}
@@ -100,12 +100,12 @@ func (s *Service) postNotifications() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		// Set notification userID and customerID
@@ -118,7 +118,7 @@ func (s *Service) postNotifications() tp.HandleFunc {
 		err := s.db.PutNotifications(user, request.Notifications)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Couldn't put notifications in database.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		result, err := s.db.GetNotificationsByCheckID(user, request.CheckID)
@@ -141,7 +141,7 @@ func (s *Service) deleteNotificationsByCheckID() tp.HandleFunc {
 
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
 		}
 
 		params, ok := ctx.Value(paramsKey).(httprouter.Params)
@@ -150,19 +150,19 @@ func (s *Service) deleteNotificationsByCheckID() tp.HandleFunc {
 		}
 
 		if checkID == "" {
-			return nil, http.StatusBadRequest, errors.New("Must specify check_id in request.")
+			return ctx, http.StatusBadRequest, errors.New("Must specify check_id in request.")
 		}
 
 		// Get notifications by checkID and then call delete on each one
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 		err = s.db.DeleteNotifications(user, notifications)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
-			return nil, http.StatusInternalServerError, err
+			return ctx, http.StatusInternalServerError, err
 		}
 
 		return nil, http.StatusOK, nil
@@ -175,7 +175,7 @@ func (s *Service) getNotificationsByCheckID() tp.HandleFunc {
 
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get user from request context.")
 		}
 
 		params, ok := ctx.Value(paramsKey).(httprouter.Params)
@@ -184,14 +184,14 @@ func (s *Service) getNotificationsByCheckID() tp.HandleFunc {
 		}
 
 		if checkID == "" {
-			return nil, http.StatusBadRequest, errors.New("Must specify check-id in request.")
+			return ctx, http.StatusBadRequest, errors.New("Must specify check-id in request.")
 		}
 
 		// Get notifications by checkID and then call delete on each one
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getNotificationsByCheckID", "error": err}).Error("Couldn't get notifications from database.")
-			return nil, http.StatusInternalServerError, err
+			return ctx, http.StatusInternalServerError, err
 		}
 
 		response := &obj.Notifications{Notifications: notifications}
@@ -252,12 +252,12 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.SlackOAuthRequest)
 		if !ok {
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		oaRequest := &obj.SlackOAuthRequest{
@@ -270,17 +270,17 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 		oaResponse, err := oaRequest.Do("https://slack.com/api/oauth.access")
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't get oauth response from slack.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		if err = oaResponse.Validate(); err != nil {
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't write slack oauth response to database.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return oaResponse, http.StatusOK, nil
@@ -293,23 +293,23 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Didn't get oauth response from database.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 		if oaResponse == nil || oaResponse.Bot == nil {
-			return nil, http.StatusNotFound, nil
+			return ctx, http.StatusNotFound, nil
 		}
 
 		api := slack.New(oaResponse.Bot.BotAccessToken)
 		channels, err := api.GetChannels(true)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Couldn't get channels from slack.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		respChannels := []*obj.SlackChannel{}
@@ -328,39 +328,33 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 	}
 }
 
-// Fetch Slack team info from the DB, check to see if the token is active
-func (s *Service) getSlackInfo() tp.HandleFunc {
+// Fetch slack token from database, check to see if the token is active
+func (s *Service) getSlackToken() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
 		if err != nil {
-			log.WithFields(log.Fields{"service": "getSlackInfo", "error": err}).Error("Didn't get oauth response from database.")
-			return nil, http.StatusInternalServerError, err
+			log.WithFields(log.Fields{"service": "getSlackToken", "error": err}).Error("Didn't get oauth response from database.")
+			return ctx, http.StatusInternalServerError, err
 		}
 
 		if oaResponse == nil || oaResponse.Bot == nil {
-			return nil, http.StatusNotFound, fmt.Errorf("integration_inactive")
+			return ctx, http.StatusNotFound, fmt.Errorf("integration_inactive")
 		}
 
 		// confirm that the token is good
 		api := slack.New(oaResponse.Bot.BotAccessToken)
 		_, err = api.AuthTest()
 		if err != nil {
-			log.WithFields(log.Fields{"service": "getSlackInfo", "error": err}).Error("Slack API auth test failed.")
-			return nil, http.StatusNotFound, fmt.Errorf("integration_inactive")
+			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Couldn't get slack token.")
+			return ctx, http.StatusNotFound, fmt.Errorf("integration_inactive")
 		}
 
-		teamInfo, err := api.GetTeamInfo()
-		if err != nil {
-			log.WithFields(log.Fields{"service": "getSlackInfo", "error": err}).Error("Couldn't get Slack team information.")
-			return nil, http.StatusNotFound, fmt.Errorf("integration_inactive")
-		}
-
-		return teamInfo, http.StatusOK, nil
+		return oaResponse, http.StatusOK, nil
 	}
 }
 
@@ -369,11 +363,11 @@ func (s *Service) getSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 		request, ok := ctx.Value(requestKey).(*obj.SlackOAuthRequest)
 		if !ok {
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		// Might need to pass state as well...
@@ -395,7 +389,7 @@ func (s *Service) getSlackCode() tp.HandleFunc {
 			err = s.db.PutSlackOAuthResponse(user, oaResponse)
 			if err != nil {
 				log.WithFields(log.Fields{"service": "getSlackCode", "error": err}).Error("Couldn't put oauth response received from slack.")
-				return nil, http.StatusInternalServerError, err
+				return ctx, http.StatusInternalServerError, err
 			}
 		}
 
@@ -407,23 +401,23 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		slackSender, err := notifier.NewSlackBotSender()
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackTest"}).Error("Couldn't get slack sender.")
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		if len(request.Notifications) < 1 {
 			log.WithFields(log.Fields{"service": "postSlackTest"}).Error("Invalid notification")
-			return nil, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
+			return ctx, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
 		}
 
 		event := obj.GenerateTestEvent()
@@ -432,7 +426,7 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 		err = slackSender.Send(request.Notifications[0], event)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackTest", "error": err}).Error("Error sending notification to slack")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return nil, http.StatusOK, nil
@@ -443,23 +437,23 @@ func (s *Service) postWebHookTest() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		webHookSender, err := notifier.NewWebHookSender()
 		if err != nil {
 			log.WithError(err).Error("Couldn't get web hook sender")
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		if len(request.Notifications) < 1 {
 			log.WithFields(log.Fields{"service": "postWebHookTest"}).Error("Invalid notification")
-			return nil, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
+			return ctx, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
 		}
 
 		event := obj.GenerateTestEvent()
@@ -468,7 +462,7 @@ func (s *Service) postWebHookTest() tp.HandleFunc {
 		err = webHookSender.Send(request.Notifications[0], event)
 		if err != nil {
 			log.WithError(err).Error("Error sending notification to endpoint")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return nil, http.StatusOK, nil
@@ -479,23 +473,23 @@ func (s *Service) postEmailTest() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		emailSender, err := notifier.NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postEmailTest"}).Error("Couldn't get email sender.")
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok {
-			return nil, http.StatusBadRequest, errUnknown
+			return ctx, http.StatusBadRequest, errUnknown
 		}
 
 		if len(request.Notifications) < 1 {
 			log.WithFields(log.Fields{"service": "postEmailTest"}).Error("Invalid notification")
-			return nil, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
+			return ctx, http.StatusBadRequest, fmt.Errorf("Must have at least one notification")
 		}
 
 		event := obj.GenerateTestEvent()
@@ -504,7 +498,7 @@ func (s *Service) postEmailTest() tp.HandleFunc {
 		err = emailSender.Send(request.Notifications[0], event)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postEmailTest", "error": err}).Error("Error sending notification via email.")
-			return nil, http.StatusBadRequest, err
+			return ctx, http.StatusBadRequest, err
 		}
 
 		return nil, http.StatusOK, nil
