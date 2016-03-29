@@ -1,7 +1,6 @@
 package store
 
 import (
-	"os"
 	"testing"
 
 	"github.com/opsee/basic/com"
@@ -17,7 +16,7 @@ type StoreTest struct {
 
 func NewStoreTest() *StoreTest {
 	log.Info("Connecting to local test store")
-	db, err := NewPostgres(os.Getenv("HUGS_POSTGRES_CONN"))
+	db, err := NewPostgres()
 	if err != nil {
 		panic(err)
 	}

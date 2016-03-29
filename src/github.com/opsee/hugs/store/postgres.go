@@ -12,6 +12,7 @@ import (
 	"github.com/jmoiron/sqlx/types"
 	_ "github.com/lib/pq"
 	"github.com/opsee/basic/com"
+	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 )
 
@@ -19,17 +20,9 @@ type Postgres struct {
 	db *sqlx.DB
 }
 
-func NewPostgres(connection string) (*Postgres, error) {
-	db, err := sqlx.Connect("postgres", connection)
-	if err != nil {
-		return nil, err
-	}
-
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
-
+func NewPostgres() (*Postgres, error) {
 	return &Postgres{
-		db: db,
+		db: config.GetConfig().DBConnection,
 	}, nil
 }
 

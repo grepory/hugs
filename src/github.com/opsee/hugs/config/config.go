@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/opsee/hugs/util"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,7 +19,7 @@ import (
 type Config struct {
 	// PublicHost specifies the listen address for the API
 	PublicHost string `required:"true"`
-	// PostgresConn is the Postgres connection string for the hugs database
+	// postgresConn is the Postgres connection string for the hugs database
 	// e.g. postgres://user:pass@localhost/dbname
 	PostgresConn string `required:"true"`
 	// SqsUrl is the fully qualified HTTP endpoint for SQS where Hugs listens
@@ -55,6 +57,9 @@ type Config struct {
 	BartnetEndpoint string
 	// YellerAPIKey is the API key used to report errors to the Yeller app
 	YellerAPIKey string
+
+	// global database connection
+	DBConnection *sqlx.DB
 }
 
 func (this *Config) Validate() error {
@@ -68,6 +73,20 @@ func (this *Config) Validate() error {
 var hugsConfig *Config
 var once sync.Once
 
+// initializes a database store to be used throughout the app
+func (this *Config) getDatabaseConnection() {
+	if this.DBConnection == nil {
+		db, err := sqlx.Connect("postgres", this.PostgresConn)
+		if err != nil {
+			log.WithError(err).Fatal("Couldn't create database connection")
+		}
+
+		db.SetMaxOpenConns(10)
+		db.SetMaxIdleConns(10)
+		this.DBConnection = db
+	}
+}
+
 func (this *Config) getAWSSession() {
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
@@ -79,7 +98,7 @@ func (this *Config) getAWSSession() {
 
 	this.AWSSession = session.New(&aws.Config{
 		Credentials: creds,
-		MaxRetries:  aws.Int(11),
+		MaxRetries:  aws.Int(3),
 		Region:      aws.String(this.AWSRegion),
 	})
 }
@@ -119,6 +138,7 @@ func GetConfig() *Config {
 		if err := c.Validate(); err == nil {
 			c.setLogLevel()
 			c.getAWSSession()
+			c.getDatabaseConnection()
 			hugsConfig = c
 		} else {
 			log.WithFields(log.Fields{"config": "Validate", "error": err}).Fatal("Error generating config.")

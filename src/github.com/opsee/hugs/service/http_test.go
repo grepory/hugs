@@ -11,8 +11,6 @@ import (
 	"testing"
 	//"golang.org/x/net/context"
 
-	"os"
-
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
@@ -102,7 +100,7 @@ func NewServiceTest() *ServiceTest {
 
 	log.Info(userAuthToken)
 	log.Info("Connecting to local test obj")
-	db, err := store.NewPostgres(os.Getenv("HUGS_POSTGRES_CONN"))
+	db, err := store.NewPostgres()
 	if err != nil {
 		panic(err)
 	}

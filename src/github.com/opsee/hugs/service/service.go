@@ -514,7 +514,7 @@ func decoders(userType interface{}, requestType interface{}) []tp.DecodeFunc {
 }
 
 func NewService() (*Service, error) {
-	dbmaybe, err := store.NewPostgres(config.GetConfig().PostgresConn)
+	dbmaybe, err := store.NewPostgres()
 	if err != nil {
 		return nil, err
 	}
