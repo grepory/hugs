@@ -7,7 +7,6 @@ import (
 
 	"github.com/hoisie/mustache"
 	"github.com/opsee/basic/com"
-	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
@@ -78,7 +77,7 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 }
 
 func (this SlackBotSender) getSlackToken(n *obj.Notification) (string, error) {
-	s, err := store.NewPostgres(config.GetConfig().PostgresConn)
+	s, err := store.NewPostgres()
 	if err != nil {
 		return "", err
 	}

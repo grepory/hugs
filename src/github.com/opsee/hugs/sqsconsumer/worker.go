@@ -35,7 +35,7 @@ type Worker struct {
 }
 
 func NewWorker(ID string, maxErr int, sqsUrl string) (*Worker, error) {
-	s, err := store.NewPostgres(config.GetConfig().PostgresConn)
+	s, err := store.NewPostgres()
 	if err != nil {
 		return nil, err
 	}
