@@ -8,7 +8,7 @@ var CheckFailing = `{
     {
       "pretext": "Failing check",
       "title": "{{check_name}} failing in {{group_name}}",
-      "title_link": "https://app.opsee.com/check/{{check_id}}",
+      "title_link": "https://app.opsee.com/check/{{check_id}}?utm_source=notification&utm_medium=slack&utm_campaign=app",
       "text": "{{fail_count}} of {{instance_count}} Failing",
       "color": "#f44336"
     }
