@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/hoisie/mustache"
 	"github.com/opsee/basic/com"
@@ -57,7 +58,7 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 		}
 
 		if e.Nocap != nil && e.Nocap.JSONUrl != "" {
-			templateContent["json_url"] = fmt.Sprintf("/event?json=%s&", e.Nocap.JSONUrl)
+			templateContent["json_url"] = fmt.Sprintf("/event?json=%s&", url.QueryEscape(e.Nocap.JSONUrl))
 		} else {
 			templateContent["json_url"] = "?"
 		}
