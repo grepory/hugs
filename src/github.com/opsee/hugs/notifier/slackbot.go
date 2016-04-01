@@ -56,6 +56,12 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 			"channel":        n.Value,
 		}
 
+		if e.Nocap != nil && e.Nocap.JSONUrl != "" {
+			templateContent["json_url"] = fmt.Sprintf("/event?json=%s&", e.Nocap.JSONUrl)
+		} else {
+			templateContent["json_url"] = "?"
+		}
+
 		postMessageRequest := &obj.SlackPostChatMessageRequest{}
 		log.Debug(string(slackTemplate.Render(templateContent)))
 		err = json.Unmarshal([]byte(slackTemplate.Render(templateContent)), postMessageRequest)
