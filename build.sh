@@ -9,8 +9,3 @@ echo "create database hugs_test" | psql $HUGS_POSTGRES_CONN
 
 migrate -url $HUGS_POSTGRES_CONN -path ./migrations up
 
-checker_proto=proto/bastion_proto/checker.proto
-
-protoc --go_out=plugins=grpc,Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor:. ${checker_proto}
-
-mv ./proto/bastion_proto/checker.pb.go src/github.com/opsee/hugs/checker/checker.pb.go
