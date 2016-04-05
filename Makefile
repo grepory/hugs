@@ -1,23 +1,36 @@
+PROJECT := hugs
 APPENV := testenv
+REV ?= latest
 
-build: deps
-	fmt $(APPENV)
+build: deps $(APPENV)
 	docker run \
-		--link hugs_postgres_1:postgres \
+		--link $(PROJECT)_postgres_1:postgres \
 		--env-file ./$(APPENV) \
 		-e "TARGETS=linux/amd64" \
-		-v `pwd`:/build \
-		quay.io/opsee/build-go:go15
-	docker build -t quay.io/opsee/hugs:latest .
+		-e PROJECT=github.com/opsee/$(PROJECT) \
+		-v `pwd`:/gopath/src/github.com/opsee/$(PROJECT) \
+		quay.io/opsee/build-go:16
+	docker build -t quay.io/opsee/$(PROJECT):$(REV) .
 
-fmt:
-	@gofmt -w src/
+run:
+	docker run \
+		--link $(PROJECT)_postgres_1:postgres \
+		--env-file ./$(APPENV) \
+		-e AWS_DEFAULT_REGION \
+		-e AWS_ACCESS_KEY_ID \
+		-e AWS_SECRET_ACCESS_KEY \
+		-p 9101:9101 \
+		--rm \
+		quay.io/opsee/$(PROJECT):$(REV)
 
 deps:
 	docker-compose stop
 	docker-compose rm -f
 	docker-compose up -d
 	docker run --link hugs_postgres_1:postgres aanand/wait
+
+fmt:
+	@govendor fmt +local
 
 migrate:
 	migrate -url $(HUGS_POSTGRES_CONN) -path ./migrations up
