@@ -52,7 +52,7 @@ func NewFullCheckResult(checkResult *schema.CheckResult) (*FullCheckResult, erro
 		}
 
 		// Unmarshal protobuf
-		any, err := schema.UnmarshalAny(response.Response)
+		any, err := opsee_types.UnmarshalAny(response.Response)
 		if err != nil {
 			log.Error(err)
 			return nil, err

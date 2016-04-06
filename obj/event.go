@@ -3,6 +3,7 @@ package obj
 import (
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/util"
+	opsee_types "github.com/opsee/protobuf/opseeproto/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,7 +31,7 @@ func GenerateTestEvent() *Event {
 		Host: "a host",
 	}
 
-	responseAny, err := schema.MarshalAny(httpResponse)
+	responseAny, err := opsee_types.MarshalAny(httpResponse)
 	if err != nil {
 		log.WithFields(log.Fields{"service": "GenerateTestEvent", "error": err}).Error("Error marshalling HttpResponse.")
 	}
