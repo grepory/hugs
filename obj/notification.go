@@ -11,6 +11,12 @@ type Notifications struct {
 }
 
 func (this *Notifications) Validate() error {
+	validator := &util.Validator{}
+	for _, notification := range this.Notifications {
+		if err := validator.Validate(notification); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

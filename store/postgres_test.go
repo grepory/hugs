@@ -69,7 +69,7 @@ var Common = NewStoreTest()
 func TestStorePutNotifications(t *testing.T) {
 	Common.DBStore.DeleteNotificationsByUser(Common.User)
 	log.Info("TestStorePutNotifications: Adding ", len(Common.Notifications), " To Store.")
-	if err := Common.DBStore.PutNotifications(Common.User, Common.Notifications); err != nil {
+	if err := Common.DBStore.PutNotifications(Common.Notifications); err != nil {
 		log.Error(err)
 		t.FailNow()
 	}
@@ -78,7 +78,7 @@ func TestStorePutNotifications(t *testing.T) {
 
 func TestStoreGetNotifications(t *testing.T) {
 	log.Info("TestStoreGetNotifications: Getting Common.Notifications from store")
-	notifications, err := Common.DBStore.GetNotifications(Common.User)
+	notifications, err := Common.DBStore.GetNotificationsByUser(Common.User)
 
 	if err != nil {
 		log.Error(err)
@@ -110,7 +110,7 @@ func TestStoreGetNotificationsByCheckID(t *testing.T) {
 }
 
 func TestStoreDeleteNotifications(t *testing.T) {
-	notifications, err := Common.DBStore.GetNotifications(Common.User)
+	notifications, err := Common.DBStore.GetNotificationsByUser(Common.User)
 	if err != nil {
 		log.Error(err)
 		t.FailNow()
@@ -122,7 +122,7 @@ func TestStoreDeleteNotifications(t *testing.T) {
 			t.FailNow()
 		}
 	}
-	notifications, err = Common.DBStore.GetNotifications(Common.User)
+	notifications, err = Common.DBStore.GetNotificationsByUser(Common.User)
 	if err != nil {
 		log.Error(err)
 		t.FailNow()

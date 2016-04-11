@@ -155,7 +155,7 @@ func NewServiceTest() *ServiceTest {
 	go startTestServer()
 
 	log.Info("Adding initial notifications to obj...")
-	err = serviceTest.Service.db.PutNotifications(serviceTest.User, serviceTest.Notifications)
+	err = serviceTest.Service.db.PutNotifications(serviceTest.Notifications)
 	if err != nil {
 		log.WithFields(log.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service obj.")
 	}
@@ -217,7 +217,15 @@ func TestPostNotifications(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         0,
+				ID:         99,
+				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserID:     13,
+				CheckID:    "00002",
+				Value:      "off 2",
+				Type:       "email",
+			},
+			&obj.Notification{
+				ID:         98,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "00002",
@@ -235,17 +243,55 @@ func TestPostNotifications(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	req.Header.Set("Authorization", Common.UserToken)
 
 	rw := httptest.NewRecorder()
 
 	Common.Service.router.ServeHTTP(rw, req)
-	assert.Equal(t, http.StatusCreated, rw.Code)
+
+	var resp obj.Notifications
+
+	err = json.Unmarshal(rw.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	log.Info(resp)
+	if len(resp.Notifications) == 0 {
+		t.FailNow()
+	}
+
+	assert.Equal(t, len(cn.Notifications), len(resp.Notifications))
+	assert.Equal(t, http.StatusOK, rw.Code)
 }
 
-func TestGetNotificationsByCheckID(t *testing.T) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/00000", Common.Service.config.PublicHost), nil)
+func TestDeleteNotifications(t *testing.T) {
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			&obj.Notification{
+				ID:         99,
+				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserID:     13,
+				CheckID:    "00002",
+				Value:      "off 2",
+				Type:       "email",
+			},
+			&obj.Notification{
+				ID:         98,
+				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserID:     13,
+				CheckID:    "00002",
+				Value:      "off 2",
+				Type:       "email",
+			}},
+	}
+
+	cnBytes, err := json.Marshal(cn)
+	if err != nil {
+		t.FailNow()
+	}
+	rdr := bytes.NewBufferString(string(cnBytes))
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifications", Common.Service.config.PublicHost), rdr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,24 +302,13 @@ func TestGetNotificationsByCheckID(t *testing.T) {
 
 	Common.Service.router.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusOK, rw.Code)
-
-	var resp obj.Notifications
-
-	err = json.Unmarshal(rw.Body.Bytes(), &resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	log.Info(resp)
-
-	assert.Equal(t, 3, len(resp.Notifications))
 }
 
 func TestPutNotification(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         3,
+				ID:         9999,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "666",
@@ -301,7 +336,7 @@ func TestPutNotification(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, rw.Code)
 }
 
-func TestGetNotificationsByCheckID666(t *testing.T) {
+func TestGetNotificationsByCheckID(t *testing.T) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/666", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -327,7 +362,7 @@ func TestGetNotificationsByCheckID666(t *testing.T) {
 	}
 }
 
-func TestDeleteNotifications(t *testing.T) {
+func TestDeleteNotification(t *testing.T) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifications/00002", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -476,7 +511,7 @@ func TestPostWebHookTest(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         0,
+				ID:         1,
 				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 				UserID:     13,
 				CheckID:    "00002",
