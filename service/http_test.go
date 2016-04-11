@@ -155,7 +155,7 @@ func NewServiceTest() *ServiceTest {
 	go startTestServer()
 
 	log.Info("Adding initial notifications to obj...")
-	err = serviceTest.Service.db.PutNotifications(serviceTest.Notifications)
+	err = serviceTest.Service.db.PutNotifications(user, serviceTest.Notifications)
 	if err != nil {
 		log.WithFields(log.Fields{"Error": err.Error()}).Error("Couldn't add initial notifications to service obj.")
 	}
@@ -213,6 +213,69 @@ func TestGetNotifications(t *testing.T) {
 	}
 }
 
+// test inserting/updating notifications for multiple checks
+func TestPostNotificationsMultiCheck(t *testing.T) {
+	cn := []*obj.Notifications{
+		&obj.Notifications{
+			CheckID: "TestMultiEdit0",
+			Notifications: []*obj.Notification{
+				&obj.Notification{
+					Value: "off 2",
+					Type:  "email",
+				},
+				&obj.Notification{
+					CheckID: "TestMultiEdit0",
+					Value:   "off 2",
+					Type:    "email",
+				},
+			},
+		},
+		&obj.Notifications{
+			CheckID: "TestMultiEdit1",
+			Notifications: []*obj.Notification{
+				&obj.Notification{
+					Value: "off 2",
+					Type:  "email",
+				},
+				&obj.Notification{
+					Value: "off 2",
+					Type:  "email",
+				},
+			},
+		},
+	}
+
+	cnBytes, err := json.Marshal(cn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rdr := bytes.NewBufferString(string(cnBytes))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/notifications-multicheck", Common.Service.config.PublicHost), rdr)
+	if err != nil {
+		log.WithError(err).Error("%v", err)
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+	bytes := rw.Body.Bytes()
+
+	notificationsObjs := []*obj.Notification{}
+	err = json.Unmarshal(bytes, &notificationsObjs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(notificationsObjs) == 0 {
+		t.FailNow()
+	}
+
+	assert.Equal(t, http.StatusOK, rw.Code)
+}
+
 func TestPostNotifications(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
@@ -262,46 +325,7 @@ func TestPostNotifications(t *testing.T) {
 	}
 
 	assert.Equal(t, len(cn.Notifications), len(resp.Notifications))
-	assert.Equal(t, http.StatusOK, rw.Code)
-}
-
-func TestDeleteNotifications(t *testing.T) {
-	cn := &obj.Notifications{
-		Notifications: []*obj.Notification{
-			&obj.Notification{
-				ID:         99,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
-				Value:      "off 2",
-				Type:       "email",
-			},
-			&obj.Notification{
-				ID:         98,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
-				Value:      "off 2",
-				Type:       "email",
-			}},
-	}
-
-	cnBytes, err := json.Marshal(cn)
-	if err != nil {
-		t.FailNow()
-	}
-	rdr := bytes.NewBufferString(string(cnBytes))
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/notifications", Common.Service.config.PublicHost), rdr)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req.Header.Set("Authorization", Common.UserToken)
-
-	rw := httptest.NewRecorder()
-
-	Common.Service.router.ServeHTTP(rw, req)
-	assert.Equal(t, http.StatusOK, rw.Code)
+	assert.Equal(t, http.StatusCreated, rw.Code)
 }
 
 func TestPutNotification(t *testing.T) {

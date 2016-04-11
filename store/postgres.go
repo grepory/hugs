@@ -26,14 +26,12 @@ func NewPostgres() (*Postgres, error) {
 	}, nil
 }
 
-// given a list of notifications, returns a list of notifications for each (if it exists)
-// TODO(dan) problem is when one of these calls fails
 func (pg *Postgres) GetNotifications(user *com.User, oldNotifications []*obj.Notification) ([]*obj.Notification, error) {
 	notifications := []*obj.Notification{}
 	for _, oldNotification := range oldNotifications {
 		newNotification, err := pg.GetNotification(user, oldNotification.ID)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to get notification %d, for user %s", oldNotification.ID, user.CustomerID)
+			log.WithError(err).Errorf("Failed to get notification %d, for customerId %s", oldNotification.ID, user.CustomerID)
 		}
 		notifications = append(notifications, newNotification)
 	}
@@ -73,10 +71,9 @@ func (pg *Postgres) deleteNotification(x sqlx.Ext, notification *obj.Notificatio
 	return err
 }
 
-func (pg *Postgres) updateNotification(x sqlx.Ext, notification *obj.Notification) error {
-	_, err := sqlx.NamedExec(x,
-		`UPDATE notifications set customer_id = :customer_id, user_id = :user_id, check_id = :check_id, value = :value, type = :type)
-		WHERE notification_id = :id`, notification)
+// Deletes all notifications associated with the given notification's checkId
+func (pg *Postgres) deleteNotificationsByCheckId(x sqlx.Ext, notification *obj.Notification) error {
+	_, err := sqlx.NamedExec(x, `delete from notifications where check_id = :check_id  AND customer_id = :customer_id`, notification)
 	return err
 }
 
@@ -88,29 +85,60 @@ func (pg *Postgres) putNotification(x sqlx.Ext, notification *obj.Notification) 
 	return err
 }
 
-func (pg *Postgres) PutNotifications(notifications []*obj.Notification) error {
+func (pg *Postgres) PutNotifications(user *com.User, notifications []*obj.Notification) error {
 	tx, err := pg.db.Beginx()
 	if err != nil {
 		return err
 	}
 
 	for _, notification := range notifications {
-		err = pg.deleteNotification(tx, notification)
-		if err != nil {
-			log.WithError(err).Errorf("Couldn't delete notification %d for user %s", notification.ID, notification.CustomerID)
-			if err := tx.Rollback(); err != nil {
-				log.WithError(err).Error("Error rolling back transaction")
-			}
-			return fmt.Errorf("Couldn't delete notification.")
-		}
+		_, err := tx.NamedExec(
+			`insert into notifications (customer_id, user_id, check_id, value, type)
+														 values (:customer_id, :user_id, :check_id, :value, :type)
+														 			 returning id`, notification)
 
-		err = pg.putNotification(tx, notification)
 		if err != nil {
-			log.WithError(err).Errorf("Couldn't put notification %d for user %s", notification.ID, notification.CustomerID)
+			log.WithFields(log.Fields{"postgres": "PutNotifications", "user": user, "notification": notification, "error": err}).Error("Couldn't put notification.")
 			if err := tx.Rollback(); err != nil {
 				log.WithError(err).Error("Error rolling back transaction")
 			}
 			return fmt.Errorf("Couldn't put notification.")
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (pg *Postgres) PutNotificationsMultiCheck(notificationsObjs []*obj.Notifications) error {
+	tx, err := pg.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	for _, notificationsObj := range notificationsObjs {
+		// delete all notifications associated with this checkId
+		if len(notificationsObj.Notifications) > 0 {
+			notification := notificationsObj.Notifications[0]
+			err = pg.deleteNotificationsByCheckId(tx, notification)
+			if err != nil {
+				log.WithError(err).Errorf("Couldn't delete notifications for check %s for customerId %s", notification.CheckID, notification.CustomerID)
+				if err := tx.Rollback(); err != nil {
+					log.WithError(err).Error("Error rolling back transaction")
+				}
+				return fmt.Errorf("Couldn't delete notification.")
+			}
+		}
+
+		// add all new notifications for a given check
+		for _, notification := range notificationsObj.Notifications {
+			err = pg.putNotification(tx, notification)
+			if err != nil {
+				log.WithError(err).Errorf("Couldn't put notification %d for customerId %s", notification.ID, notification.CustomerID)
+				if err := tx.Rollback(); err != nil {
+					log.WithError(err).Error("Error rolling back transaction")
+				}
+				return fmt.Errorf("Couldn't put notification.")
+			}
 		}
 	}
 	return tx.Commit()
@@ -125,7 +153,7 @@ func (pg *Postgres) DeleteNotifications(notifications []*obj.Notification) error
 	for _, notification := range notifications {
 		err = pg.deleteNotification(tx, notification)
 		if err != nil {
-			log.WithError(err).Errorf("Couldn't delete notification %s for user %s", notification.ID, notification.CustomerID)
+			log.WithError(err).Errorf("Couldn't delete notification %s for customerId %s", notification.ID, notification.CustomerID)
 			if err := tx.Rollback(); err != nil {
 				log.WithError(err).Error("Error rolling back transaction")
 			}
