@@ -62,6 +62,7 @@ func (s *Service) NewRouter() *tp.Router {
 
 	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
 	rtr.Handle("POST", "/notifications", decoders(com.User{}, obj.Notifications{}), s.postNotifications())
+	rtr.Handle("DELETE", "/notifications", decoders(com.User{}, obj.Notifications{}), s.deleteNotifications())
 	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckID())
 	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
 	rtr.Handle("PUT", "/notifications/:check_id", decoders(com.User{}, obj.Notifications{}), s.putNotificationsByCheckID())
@@ -84,7 +85,7 @@ func (s *Service) getNotifications() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		notifications, err := s.db.GetNotifications(user)
+		notifications, err := s.db.GetNotificationsByUser(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getNotifications", "error": err}).Error("Couldn't get notifications from database.")
 			return ctx, http.StatusBadRequest, err
@@ -96,6 +97,7 @@ func (s *Service) getNotifications() tp.HandleFunc {
 	}
 }
 
+// creates or updates all notifications in the included Notifications array
 func (s *Service) postNotifications() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
@@ -108,30 +110,70 @@ func (s *Service) postNotifications() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
-		// Set notification userID and customerID
-		for _, n := range request.Notifications {
-			n.CustomerID = user.CustomerID
-			n.UserID = user.ID
-			n.CheckID = request.CheckID
+		// Set notifications customer ID
+		for _, notification := range request.Notifications {
+			notification.CustomerID = user.CustomerID
+			notification.UserID = user.ID
 		}
 
-		err := s.db.PutNotifications(user, request.Notifications)
+		notifications := obj.Notifications{
+			Notifications: request.Notifications,
+		}
+
+		// Validate all notifications
+		if err := notifications.Validate(); err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		err := s.db.PutNotifications(notifications.Notifications)
 		if err != nil {
-			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Couldn't put notifications in database.")
+			log.WithError(err).Error("Couldn't post notifications in database.")
 			return ctx, http.StatusBadRequest, err
 		}
 
-		result, err := s.db.GetNotificationsByCheckID(user, request.CheckID)
+		updatedNotifications, err := s.db.GetNotifications(user, notifications.Notifications)
 		if err != nil {
-			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Failed to get notifications.")
+			log.WithError(err).Error("Couldn't get updated list of notifications")
+			return ctx, http.StatusBadRequest, err
 		}
 
-		notifs := &obj.Notifications{
-			CheckID:       request.CheckID,
-			Notifications: result,
+		return &obj.Notifications{Notifications: updatedNotifications}, http.StatusOK, nil
+	}
+}
+
+func (s *Service) deleteNotifications() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		return notifs, http.StatusCreated, nil
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		// Set notifications customer ID
+		for _, notification := range request.Notifications {
+			notification.CustomerID = user.CustomerID
+			notification.UserID = user.ID
+		}
+
+		notifications := obj.Notifications{
+			Notifications: request.Notifications,
+		}
+		// Validate all notifications
+		if err := notifications.Validate(); err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		err := s.db.DeleteNotifications(notifications.Notifications)
+		if err != nil {
+			log.WithError(err).Error("Couldn't post notifications in database.")
+			return ctx, http.StatusBadRequest, err
+		}
+
+		return nil, http.StatusOK, nil
 	}
 }
 
@@ -153,13 +195,13 @@ func (s *Service) deleteNotificationsByCheckID() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errors.New("Must specify check_id in request.")
 		}
 
-		// Get notifications by checkID and then call delete on each one
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
 			return ctx, http.StatusBadRequest, err
 		}
-		err = s.db.DeleteNotifications(user, notifications)
+
+		err = s.db.DeleteNotifications(notifications)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "deleteNotificationsByCheckID", "error": err}).Error("Couldn't delete notifications from database.")
 			return ctx, http.StatusInternalServerError, err
@@ -187,16 +229,13 @@ func (s *Service) getNotificationsByCheckID() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errors.New("Must specify check-id in request.")
 		}
 
-		// Get notifications by checkID and then call delete on each one
 		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getNotificationsByCheckID", "error": err}).Error("Couldn't get notifications from database.")
 			return ctx, http.StatusInternalServerError, err
 		}
 
-		response := &obj.Notifications{Notifications: notifications}
-
-		return response, http.StatusOK, nil
+		return &obj.Notifications{Notifications: notifications}, http.StatusOK, nil
 	}
 }
 
@@ -236,12 +275,16 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 			n.CheckID = checkID
 		}
 
-		if err := s.db.PutNotifications(user, request.Notifications); err != nil {
+		if err := s.db.PutNotifications(request.Notifications); err != nil {
 			return nil, http.StatusInternalServerError, err
 		}
 
-		return &obj.Notifications{checkID, request.Notifications}, http.StatusCreated, nil
-
+		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "getNotificationsByCheckID", "error": err}).Error("Couldn't get notifications from database.")
+			return nil, http.StatusInternalServerError, err
+		}
+		return &obj.Notifications{Notifications: notifications}, http.StatusCreated, nil
 	}
 }
 

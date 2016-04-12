@@ -196,6 +196,31 @@ var swaggerMap = j{
 				"summary": "Retrieve all of a customer's notifications",
 				"tags":    k{"notifications"},
 			},
+
+			"delete": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "Notifications",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+				"summary": "Delete these notifications",
+				"tags":    k{"notifications"},
+			},
+
 			"post": j{
 				"parameters": []j{
 					j{
