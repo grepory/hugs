@@ -62,6 +62,7 @@ func (s *Service) NewRouter() *tp.Router {
 
 	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
 	rtr.Handle("POST", "/notifications", decoders(com.User{}, obj.Notifications{}), s.postNotifications())
+	rtr.Handle("POST", "/notifications-multicheck", decoders(com.User{}, []*obj.Notifications{}), s.postNotificationsMultiCheck())
 	rtr.Handle("DELETE", "/notifications", decoders(com.User{}, obj.Notifications{}), s.deleteNotifications())
 	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckID())
 	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
@@ -97,7 +98,6 @@ func (s *Service) getNotifications() tp.HandleFunc {
 	}
 }
 
-// creates or updates all notifications in the included Notifications array
 func (s *Service) postNotifications() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
@@ -110,70 +110,76 @@ func (s *Service) postNotifications() tp.HandleFunc {
 			return ctx, http.StatusBadRequest, errUnknown
 		}
 
-		// Set notifications customer ID
-		for _, notification := range request.Notifications {
-			notification.CustomerID = user.CustomerID
-			notification.UserID = user.ID
+		// Set notification userID and customerID
+		for _, n := range request.Notifications {
+			n.CustomerID = user.CustomerID
+			n.UserID = user.ID
+			n.CheckID = request.CheckID
 		}
 
-		notifications := obj.Notifications{
-			Notifications: request.Notifications,
-		}
-
-		// Validate all notifications
-		if err := notifications.Validate(); err != nil {
-			return ctx, http.StatusInternalServerError, err
-		}
-
-		err := s.db.PutNotifications(notifications.Notifications)
+		err := s.db.PutNotifications(user, request.Notifications)
 		if err != nil {
-			log.WithError(err).Error("Couldn't post notifications in database.")
+			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Couldn't put notifications in database.")
 			return ctx, http.StatusBadRequest, err
 		}
 
-		updatedNotifications, err := s.db.GetNotifications(user, notifications.Notifications)
+		result, err := s.db.GetNotificationsByCheckID(user, request.CheckID)
 		if err != nil {
-			log.WithError(err).Error("Couldn't get updated list of notifications")
-			return ctx, http.StatusBadRequest, err
+			log.WithFields(log.Fields{"service": "putNotifications", "error": err}).Error("Failed to get notifications.")
 		}
 
-		return &obj.Notifications{Notifications: updatedNotifications}, http.StatusOK, nil
+		notifs := &obj.Notifications{
+			CheckID:       request.CheckID,
+			Notifications: result,
+		}
+
+		return notifs, http.StatusCreated, nil
 	}
 }
 
-func (s *Service) deleteNotifications() tp.HandleFunc {
+// creates or updates all notifications in the included Notifications array
+func (s *Service) postNotificationsMultiCheck() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		request, ok := ctx.Value(requestKey).(*obj.Notifications)
+		responseNotificationsObjArray, ok := ctx.Value(requestKey).(*[]*obj.Notifications)
 		if !ok {
-			return ctx, http.StatusBadRequest, errUnknown
+			return nil, http.StatusBadRequest, errUnknown
+		}
+		notificationsObjArray := *responseNotificationsObjArray
+
+		updatedNotificationsObjMap := make(map[string]*obj.Notifications)
+		for _, notificationsObj := range notificationsObjArray {
+			updatedNotificationsObjMap[notificationsObj.CheckID] = &obj.Notifications{CheckID: notificationsObj.CheckID}
+			for _, notification := range notificationsObj.Notifications {
+				notification.CustomerID = user.CustomerID
+				notification.UserID = user.ID
+				notification.CheckID = notificationsObj.CheckID
+			}
 		}
 
-		// Set notifications customer ID
-		for _, notification := range request.Notifications {
-			notification.CustomerID = user.CustomerID
-			notification.UserID = user.ID
-		}
-
-		notifications := obj.Notifications{
-			Notifications: request.Notifications,
-		}
-		// Validate all notifications
-		if err := notifications.Validate(); err != nil {
-			return ctx, http.StatusInternalServerError, err
-		}
-
-		err := s.db.DeleteNotifications(notifications.Notifications)
+		err := s.db.PutNotificationsMultiCheck(notificationsObjArray)
 		if err != nil {
 			log.WithError(err).Error("Couldn't post notifications in database.")
-			return ctx, http.StatusBadRequest, err
+			return nil, http.StatusBadRequest, err
 		}
 
-		return nil, http.StatusOK, nil
+		// return the notifications for each check in the deebee
+		updatedNotificationsObjs := make([]*obj.Notifications, 0, len(updatedNotificationsObjMap))
+		for checkId, updatedNotificationsObj := range updatedNotificationsObjMap {
+			updatedNotificationsArray, err := s.db.GetNotificationsByCheckID(user, checkId)
+			if err != nil {
+				log.WithError(err).Error("Couldn't get updated list of notifications")
+			}
+
+			updatedNotificationsObj.Notifications = updatedNotificationsArray
+			updatedNotificationsObjs = append(updatedNotificationsObjs, updatedNotificationsObj)
+		}
+
+		return updatedNotificationsObjs, http.StatusOK, nil
 	}
 }
 
@@ -275,16 +281,12 @@ func (s *Service) putNotificationsByCheckID() tp.HandleFunc {
 			n.CheckID = checkID
 		}
 
-		if err := s.db.PutNotifications(request.Notifications); err != nil {
+		if err := s.db.PutNotifications(user, request.Notifications); err != nil {
 			return nil, http.StatusInternalServerError, err
 		}
 
-		notifications, err := s.db.GetNotificationsByCheckID(user, checkID)
-		if err != nil {
-			log.WithFields(log.Fields{"service": "getNotificationsByCheckID", "error": err}).Error("Couldn't get notifications from database.")
-			return nil, http.StatusInternalServerError, err
-		}
-		return &obj.Notifications{Notifications: notifications}, http.StatusCreated, nil
+		return &obj.Notifications{checkID, request.Notifications}, http.StatusCreated, nil
+
 	}
 }
 
@@ -295,12 +297,12 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		request, ok := ctx.Value(requestKey).(*obj.SlackOAuthRequest)
 		if !ok {
-			return ctx, http.StatusBadRequest, errUnknown
+			return nil, http.StatusBadRequest, errUnknown
 		}
 
 		oaRequest := &obj.SlackOAuthRequest{
@@ -313,17 +315,17 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 		oaResponse, err := oaRequest.Do("https://slack.com/api/oauth.access")
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't get oauth response from slack.")
-			return ctx, http.StatusBadRequest, err
+			return nil, http.StatusBadRequest, err
 		}
 
 		if err = oaResponse.Validate(); err != nil {
-			return ctx, http.StatusBadRequest, err
+			return nil, http.StatusBadRequest, err
 		}
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackCode", "error": err}).Error("Couldn't write slack oauth response to database.")
-			return ctx, http.StatusBadRequest, err
+			return nil, http.StatusBadRequest, err
 		}
 
 		return oaResponse, http.StatusOK, nil
@@ -336,23 +338,23 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
 		if !ok {
-			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Didn't get oauth response from database.")
-			return ctx, http.StatusBadRequest, err
+			return nil, http.StatusBadRequest, err
 		}
 		if oaResponse == nil || oaResponse.Bot == nil {
-			return ctx, http.StatusNotFound, nil
+			return nil, http.StatusNotFound, nil
 		}
 
 		api := slack.New(oaResponse.Bot.BotAccessToken)
 		channels, err := api.GetChannels(true)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Couldn't get channels from slack.")
-			return ctx, http.StatusBadRequest, err
+			return nil, http.StatusBadRequest, err
 		}
 
 		respChannels := []*obj.SlackChannel{}
@@ -505,6 +507,42 @@ func (s *Service) postWebHookTest() tp.HandleFunc {
 		err = webHookSender.Send(request.Notifications[0], event)
 		if err != nil {
 			log.WithError(err).Error("Error sending notification to endpoint")
+			return ctx, http.StatusBadRequest, err
+		}
+
+		return nil, http.StatusOK, nil
+	}
+}
+
+func (s *Service) deleteNotifications() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*com.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
+		if !ok {
+			return ctx, http.StatusBadRequest, errUnknown
+		}
+
+		// Set notifications customer ID
+		for _, notification := range request.Notifications {
+			notification.CustomerID = user.CustomerID
+			notification.UserID = user.ID
+		}
+
+		notifications := obj.Notifications{
+			Notifications: request.Notifications,
+		}
+		// Validate all notifications
+		if err := notifications.Validate(); err != nil {
+			return ctx, http.StatusInternalServerError, err
+		}
+
+		err := s.db.DeleteNotifications(notifications.Notifications)
+		if err != nil {
+			log.WithError(err).Error("Couldn't post notifications in database.")
 			return ctx, http.StatusBadRequest, err
 		}
 

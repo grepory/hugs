@@ -180,6 +180,7 @@ var swaggerMap = j{
 				"tags":    k{"getslacktoken"},
 			},
 		},
+
 		"/notifications": j{
 			"get": j{
 				"responses": j{
@@ -238,6 +239,38 @@ var swaggerMap = j{
 						"description": "",
 						"schema": j{
 							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"notifications"},
+			},
+		},
+
+		"/notifications-multicheck": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "NotificationsArray",
+						"required":    true,
+						"schema": j{
+							"items": j{
+								"$ref": "#/definitions/Notifications",
+							},
+							"type": "array",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"items": j{
+								"$ref": "#/definitions/Notifications",
+							},
+							"type": "array",
 						},
 					},
 				},
@@ -328,7 +361,7 @@ var swaggerMap = j{
 				},
 				"notifications": j{
 					"items": j{
-						"$ref": "#/definitions/Notification",
+						"$ref": "#/definitions/notification",
 					},
 					"type": "array",
 				},

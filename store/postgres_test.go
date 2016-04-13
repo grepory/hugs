@@ -69,7 +69,7 @@ var Common = NewStoreTest()
 func TestStorePutNotifications(t *testing.T) {
 	Common.DBStore.DeleteNotificationsByUser(Common.User)
 	log.Info("TestStorePutNotifications: Adding ", len(Common.Notifications), " To Store.")
-	if err := Common.DBStore.PutNotifications(Common.Notifications); err != nil {
+	if err := Common.DBStore.PutNotifications(Common.User, Common.Notifications); err != nil {
 		log.Error(err)
 		t.FailNow()
 	}
