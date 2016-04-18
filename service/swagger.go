@@ -13,6 +13,87 @@ var swaggerMap = j{
 	},
 
 	"paths": j{
+		"/services/pagerduty": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "Pagerduty account",
+						"in":          "query",
+						"name":        "account",
+						"required":    true,
+						"type":        "string",
+					},
+					j{
+						"description": "Pagerduty service_key.",
+						"in":          "query",
+						"name":        "service_key",
+						"required":    true,
+						"type":        "string",
+					},
+					j{
+						"description": "Pagerduty service_name",
+						"in":          "service_name",
+						"name":        "state",
+						"required":    true,
+						"type":        "string",
+					},
+					j{
+						"description": "Pagerduty error",
+						"in":          "error",
+						"name":        "state",
+						"required":    false,
+						"type":        "string",
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"$ref": "#/definitions/PagerDutyOAuthResponse",
+						},
+					},
+				},
+				"summary": "Saves a pagerduty token.",
+				"tags":    k{"token"},
+			},
+			"get": j{
+				"parameters": []j{},
+				"responses": j{
+					"200": j{
+						"description": "Retrieves user's pagerduty token.",
+						"schema": j{
+							"$ref": "#/definitions/PagerDutyOAuthResponse",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"getpagerdutytoken"},
+			},
+		},
+		"/services/pagerduty/test": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "Notifications",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema":      j{},
+					},
+				},
+				"summary": "Test alert on a notification",
+				"tags":    k{"notifications"},
+			},
+		},
+
 		"/services/email/test": j{
 			"post": j{
 				"parameters": []j{
@@ -375,6 +456,25 @@ var swaggerMap = j{
 				"value",
 			},
 			"type": "object",
+		},
+		"PagerDutyOAuthResponse": j{
+			"properties": j{
+				"account": j{
+					"type": "string",
+				},
+				"service_key": j{
+					"type": "string",
+				},
+				"service_name": j{
+					"type": "string",
+				},
+				"enabled": j{
+					"type": "boolean",
+				},
+				"error": j{
+					"type": "string",
+				},
+			},
 		},
 
 		"SlackOAuthRequest": j{

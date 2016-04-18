@@ -23,8 +23,44 @@ func (this *Event) Validate() error {
 	return validator.Validate(this)
 }
 
-func GenerateTestEvent() *Event {
+func GenerateFailingTestEvent() *Event {
+	httpResponse := &schema.HttpResponse{
+		Code: 200,
+		Body: "test",
+		Host: "a host",
+	}
 
+	responseAny, err := opsee_types.MarshalAny(httpResponse)
+	if err != nil {
+		log.WithFields(log.Fields{"service": "GenerateTestEvent", "error": err}).Error("Error marshalling HttpResponse.")
+	}
+
+	checkResult := &schema.CheckResult{
+		CheckId:   "00002",
+		CheckName: `Test Check`,
+		Target: &schema.Target{
+			Id: `Test Target`,
+		},
+		Responses: []*schema.CheckResponse{
+			&schema.CheckResponse{
+				Target: &schema.Target{
+					Id: "test-target",
+				},
+				Response: responseAny,
+				Passing:  false,
+			},
+		},
+		Passing: false,
+		Version: 1,
+	}
+	event := &Event{
+		Result: checkResult,
+		Test:   true,
+	}
+	return event
+}
+
+func GenerateTestEvent() *Event {
 	httpResponse := &schema.HttpResponse{
 		Code: 200,
 		Body: "test",

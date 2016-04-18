@@ -41,13 +41,22 @@ func NewNotifier() (*Notifier, map[string]error) {
 		notifier.addSender("slack_bot", slackBotSender)
 	}
 
-	// try add email sender
+	// try add pagerduty sender
 	emailSender, err := NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey)
 	if err != nil {
 		errMap["email"] = err
 	} else {
 		notifier.addSender("email", emailSender)
 	}
+
+	// try add pagerduty sender
+	pagerDutySender, err := NewPagerDutySender()
+	if err != nil {
+		errMap["pagerduty"] = err
+	} else {
+		notifier.addSender("pagerduty", pagerDutySender)
+	}
+
 	return notifier, errMap
 }
 
