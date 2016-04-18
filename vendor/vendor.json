@@ -242,38 +242,38 @@
 		},
 		{
 			"path": "github.com/opsee/basic/com",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/basic/schema",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/basic/schema/aws/autoscaling",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/basic/schema/aws/ec2",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/basic/schema/aws/elb",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/basic/schema/aws/rds",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/basic/tp",
-			"revision": "e07588539d0d69aaa97c0da5f2c2cc74d3034973",
-			"revisionTime": "2016-04-06T14:22:25-07:00"
+			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
+			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
 			"path": "github.com/opsee/notification-templates/dist/go/slack",
@@ -282,18 +282,18 @@
 		},
 		{
 			"path": "github.com/opsee/protobuf/opseeproto",
-			"revision": "490f167f615b104554f0094904c054361a95d84b",
-			"revisionTime": "2016-04-06T14:16:42-07:00"
+			"revision": "fcd127be28d4536d18a88580598eb30664b5d68f",
+			"revisionTime": "2016-04-14T10:55:35-07:00"
 		},
 		{
 			"path": "github.com/opsee/protobuf/opseeproto/types",
-			"revision": "490f167f615b104554f0094904c054361a95d84b",
-			"revisionTime": "2016-04-06T14:16:42-07:00"
+			"revision": "fcd127be28d4536d18a88580598eb30664b5d68f",
+			"revisionTime": "2016-04-14T10:55:35-07:00"
 		},
 		{
 			"path": "github.com/opsee/protobuf/plugin/graphql/scalars",
-			"revision": "490f167f615b104554f0094904c054361a95d84b",
-			"revisionTime": "2016-04-06T14:16:42-07:00"
+			"revision": "fcd127be28d4536d18a88580598eb30664b5d68f",
+			"revisionTime": "2016-04-14T10:55:35-07:00"
 		},
 		{
 			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
