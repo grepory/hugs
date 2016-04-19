@@ -11,7 +11,109 @@ var swaggerMap = j{
 		"version":     "0.0.1",
 		"description": "API for bastion management",
 	},
+
 	"paths": j{
+		"/services/email/test": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "Notifications",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema":      j{},
+					},
+				},
+				"summary": "Test alert on a notification",
+				"tags":    k{"notifications"},
+			},
+		},
+
+		"/services/webhook/test": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "Notifications",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/Notifications",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema":      j{},
+					},
+				},
+				"summary": "Test alert on a notification",
+				"tags":    k{"notifications"},
+			},
+		},
+
+		"/services/slack/channels": j{
+			"get": j{
+				"parameters": []j{},
+				"responses": j{
+					"200": j{
+						"description": "List customer's slack channels.",
+						"schema": j{
+							"$ref": "#/definitions/SlackChannelsResponse",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"getslackchannels"},
+			},
+		},
+		"/services/slack": j{
+			"post": j{
+				"parameters": []j{
+					j{
+						"description": "",
+						"in":          "body",
+						"name":        "SlackOAuthRequest",
+						"required":    true,
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthRequest",
+						},
+					},
+				},
+				"responses": j{
+					"200": j{
+						"description": "",
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthResponse",
+						},
+					},
+				},
+				"summary": "Create a new notification.",
+				"tags":    k{"postslackauthcode"},
+			},
+			"get": j{
+				"parameters": []j{},
+				"responses": j{
+					"200": j{
+						"description": "Get a customer's slack token",
+						"schema": j{
+							"$ref": "#/definitions/SlackOAuthResponse",
+						},
+					},
+				},
+				"summary": "Get a customer's slack token.",
+				"tags":    k{"getslacktoken"},
+			},
+		},
 		"/services/slack/code": j{
 			"get": j{
 				"parameters": []j{
@@ -49,7 +151,6 @@ var swaggerMap = j{
 				"tags":    k{"token"},
 			},
 		},
-
 		"/services/slack/test": j{
 			"post": j{
 				"parameters": []j{
@@ -63,7 +164,6 @@ var swaggerMap = j{
 						},
 					},
 				},
-
 				"responses": j{
 					"200": j{
 						"description": "",
@@ -72,112 +172,6 @@ var swaggerMap = j{
 				},
 				"summary": "Test alert on a notification",
 				"tags":    k{"notifications"},
-			},
-		},
-
-		"/services/email/test": j{
-			"post": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "body",
-						"name":        "Notifications",
-						"required":    true,
-						"schema": j{
-							"$ref": "#/definitions/Notifications",
-						},
-					},
-				},
-
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema":      j{},
-					},
-				},
-				"summary": "Test alert on a notification",
-				"tags":    k{"notifications"},
-			},
-		},
-
-		"/services/webhook/test": j{
-			"post": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "body",
-						"name":        "Notifications",
-						"required":    true,
-						"schema": j{
-							"$ref": "#/definitions/Notifications",
-						},
-					},
-				},
-
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema":      j{},
-					},
-				},
-				"summary": "Test alert on a notification",
-				"tags":    k{"notifications"},
-			},
-		},
-
-		"/services/slack/channels": j{
-			"get": j{
-				"parameters": []j{},
-				"responses": j{
-					"200": j{
-						"description": "List customer's slack channels.",
-						"schema": j{
-							"$ref": "#/definitions/SlackChannelsResponse",
-						},
-					},
-				},
-				"summary": "Create a new notification.",
-				"tags":    k{"getslackchannels"},
-			},
-		},
-
-		"/services/slack": j{
-			"post": j{
-				"parameters": []j{
-					j{
-						"description": "",
-						"in":          "body",
-						"name":        "SlackOAuthRequest",
-						"required":    true,
-						"schema": j{
-							"$ref": "#/definitions/SlackOAuthRequest",
-						},
-					},
-				},
-				"responses": j{
-					"200": j{
-						"description": "",
-						"schema": j{
-							"$ref": "#/definitions/SlackOAuthResponse",
-						},
-					},
-				},
-				"summary": "Create a new notification.",
-				"tags":    k{"postslackauthcode"},
-			},
-
-			"get": j{
-				"parameters": []j{},
-				"responses": j{
-					"200": j{
-						"description": "Get a customer's slack token",
-						"schema": j{
-							"$ref": "#/definitions/SlackOAuthResponse",
-						},
-					},
-				},
-				"summary": "Get a customer's slack token.",
-				"tags":    k{"getslacktoken"},
 			},
 		},
 
@@ -197,7 +191,6 @@ var swaggerMap = j{
 				"summary": "Retrieve all of a customer's notifications",
 				"tags":    k{"notifications"},
 			},
-
 			"delete": j{
 				"parameters": []j{
 					j{
@@ -221,7 +214,6 @@ var swaggerMap = j{
 				"summary": "Delete these notifications",
 				"tags":    k{"notifications"},
 			},
-
 			"post": j{
 				"parameters": []j{
 					j{
@@ -246,7 +238,6 @@ var swaggerMap = j{
 				"tags":    k{"notifications"},
 			},
 		},
-
 		"/notifications-multicheck": j{
 			"post": j{
 				"parameters": []j{
@@ -278,7 +269,6 @@ var swaggerMap = j{
 				"tags":    k{"notifications"},
 			},
 		},
-
 		"/notifications/{check_id}": j{
 			"delete": j{
 				"parameters": []j{
@@ -298,7 +288,6 @@ var swaggerMap = j{
 				"summary": "Deletes a notification.",
 				"tags":    k{"notifications"},
 			},
-
 			"get": j{
 				"parameters": []j{
 					j{
@@ -320,7 +309,6 @@ var swaggerMap = j{
 				"summary": "Retrieves a notification.",
 				"tags":    k{"notifications"},
 			},
-
 			"put": j{
 				"parameters": []j{
 					j{
@@ -353,6 +341,7 @@ var swaggerMap = j{
 			},
 		},
 	},
+
 	"definitions": j{
 		"Notifications": j{
 			"properties": j{
@@ -372,7 +361,6 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
-
 		"Notification": j{
 			"properties": j{
 				"type": j{
@@ -409,7 +397,6 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
-
 		"SlackOAuthResponse": j{
 			"properties": j{
 				"access_token": j{
@@ -436,7 +423,6 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
-
 		"SlackChannels": j{
 			"properties": j{
 				"channels": j{
@@ -451,7 +437,6 @@ var swaggerMap = j{
 			},
 			"type": "object",
 		},
-
 		"SlackChannel": j{
 			"properties": j{
 				"id": j{
