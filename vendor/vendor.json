@@ -237,8 +237,8 @@
 		},
 		{
 			"path": "github.com/nlopes/slack",
-			"revision": "14b5c06da227e7d8fe3e411b58ace3977df0d00d",
-			"revisionTime": "2016-03-30T08:13:57+01:00"
+			"revision": "7530ef00e32bc4b6fe93b49551b0bf457427c289",
+			"revisionTime": "2016-04-17T21:21:03+01:00"
 		},
 		{
 			"path": "github.com/opsee/basic/com",

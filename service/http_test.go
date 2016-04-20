@@ -59,6 +59,7 @@ func startTestServer() {
 
 	log.Fatal(http.ListenAndServe(":7766", nil))
 }
+
 func GetUserAuthToken(user *com.User) string {
 	userstring := fmt.Sprintf(`{"id": %d, "customer_id": "%s", "user_id": "%s", "email": "%s", "verified": %t, "admin": %t, "active": %t}`, user.ID, user.CustomerID, user.ID, user.Email, user.Verified, user.Admin, user.Active)
 	token := base64.StdEncoding.EncodeToString([]byte(userstring))
@@ -166,6 +167,7 @@ func NewServiceTest() *ServiceTest {
 		Scope:       "bot",
 		TeamName:    "opsee",
 		TeamID:      "opsee",
+		TeamDomain:  "opsee",
 		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",

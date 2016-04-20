@@ -66,6 +66,7 @@ type SlackOAuthResponse struct {
 	Scope           string                `json:"scope" db:"scope"`
 	TeamName        string                `json:"team_name" db:"team_name"`
 	TeamID          string                `json:"team_id" db:"team_id"`
+	TeamDomain      string                `json:"team_domain" db:"team_domain"`
 	IncomingWebhook *SlackIncomingWebhook `json:"incoming_webhook" db:"incoming_webhook"`
 	Bot             *SlackBotCreds        `json:"bot" db:"bot"`
 	SlackResponse
