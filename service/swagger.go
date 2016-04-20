@@ -408,6 +408,9 @@ var swaggerMap = j{
 				"team_name": j{
 					"type": "string",
 				},
+				"team_domain": j{
+					"type": "string",
+				},
 				"team_id": j{
 					"type": "string",
 				},

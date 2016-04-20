@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/nlopes/slack"
 	"github.com/opsee/basic/com"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/obj"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -142,28 +142,43 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 		oaResponse, err := s.db.GetSlackOAuthResponse(user)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "getSlackToken", "error": err}).Error("Didn't get oauth response from database.")
-			return ctx, http.StatusInternalServerError, err
+			return nil, http.StatusInternalServerError, err
 		}
 
 		if oaResponse == nil || oaResponse.Bot == nil {
-			return ctx, http.StatusNotFound, fmt.Errorf("integration_inactive")
+			return nil, http.StatusNotFound, fmt.Errorf("integration_inactive")
 		}
 
-		// confirm that the token is good
+		// confirm that the token is good and set team_domain
+		// NOTE: the team_domain can change. nbd if we fail to save the new one.
 		api := slack.New(oaResponse.Bot.BotAccessToken)
-		_, err = api.AuthTest()
+		teamInfo, err := api.GetTeamInfo()
 		if err != nil {
-			log.WithFields(log.Fields{"service": "getSlackChannels", "error": err}).Error("Couldn't get slack token.")
-			return ctx, http.StatusNotFound, fmt.Errorf("integration_inactive")
+			// case in which slack integration has been deactivated
+			if err.Error() == "invalid_auth" || err.Error() == "account_inactive" {
+				log.WithError(err).Error("Slack integration is inactive")
+				return nil, http.StatusBadRequest, fmt.Errorf("integration_inactive")
+			}
+			// case in which we have no TeamDomain and cant get one, pass through slack err
+			if oaResponse.TeamDomain == "" {
+				log.WithError(err).Error("Failed to get team_domain from slack")
+				return nil, http.StatusBadRequest, err
+			}
+			log.WithError(err).Warn("Couldn't get team_domain from slack.")
+		} else {
+			oaResponse.TeamDomain = teamInfo.Domain
+			if oaResponse.TeamDomain != teamInfo.Domain {
+				err = s.db.PutSlackOAuthResponse(user, oaResponse)
+				if err != nil {
+					log.WithError(err).Error("Couldn't write team info to database.")
+				}
+			}
 		}
 
 		return oaResponse, http.StatusOK, nil
 	}
 }
 
-// Finish the oauth flow and get token from slack.
-// Save the oauth response from slack and return token to front-end
-// TODO(dan) Deprecate
 func (s *Service) postSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
 		user, ok := ctx.Value(userKey).(*com.User)
@@ -191,6 +206,15 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 
 		if err = oaResponse.Validate(); err != nil {
 			return nil, http.StatusBadRequest, err
+		}
+
+		// NOTE: If we fail to get the team domain, don't worry about it.  We will refetch on GET later
+		api := slack.New(oaResponse.Bot.BotAccessToken)
+		teamInfo, err := api.GetTeamInfo()
+		if err != nil {
+			log.WithError(err).Warn("Couldn't get team_domain from slack during integration creation.")
+		} else {
+			oaResponse.TeamDomain = teamInfo.Domain
 		}
 
 		err = s.db.PutSlackOAuthResponse(user, oaResponse)
