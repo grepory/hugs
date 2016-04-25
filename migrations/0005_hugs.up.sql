@@ -1,4 +1,4 @@
-create type notification_type_new as enum ('webhook', 'slack_bot', 'email');
+create type notification_type_new as enum ('webhook', 'slack_bot', 'email', 'pagerduty');
 alter table notifications add column type_new notification_type_new;
 update notifications set type_new = 'webhook' where type = 'web_hook';
 update notifications set type_new = type::text::notification_type_new;

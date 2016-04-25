@@ -55,6 +55,11 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
 	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
 
+	// pagerduty
+	rtr.Handle("POST", "/services/pagerduty", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.PagerDutyOAuthResponse{})}, s.postPagerDutyCode())
+	rtr.Handle("GET", "/services/pagerduty", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getPagerDutyToken())
+	rtr.Handle("POST", "/services/pagerduty/test", decoders(com.User{}, obj.Notifications{}), s.postPagerDutyTest())
+
 	// email
 	rtr.Handle("POST", "/services/email/test", decoders(com.User{}, obj.Notifications{}), s.postEmailTest())
 
