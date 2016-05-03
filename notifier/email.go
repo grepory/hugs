@@ -71,6 +71,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	if e.Nocap != nil {
 		nocap := e.Nocap
 		templateContent["json_url"] = nocap.JSONUrl
+
 		if result.Passing {
 			templateName = "check-pass-json"
 		} else {
@@ -82,6 +83,16 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		} else {
 			templateName = "check-fail"
 		}
+	}
+
+	// use different tempalte for RDS instances
+	if result.Target.Type == "dbinstance" {
+		if result.Passing {
+			templateName = "check-pass-rds"
+		} else {
+			templateName = "check-fail-rds"
+		}
+		template["rds_db_name"] = result.Target.Id
 	}
 
 	mergeVars := templateContent
