@@ -20,14 +20,13 @@ type PagerDutyContext struct {
 }
 
 type PagerDutyRequest struct {
-	ServiceKey  string                 `json:"service_key"`
-	EventType   string                 `json:"event_type"`
-	Description string                 `json:"description"`
-	IncidentKey string                 `json:"incident_key"`
-	Client      string                 `json:"client"`
-	ClientURL   string                 `json:"client_url"`
-	Details     map[string]interface{} `json:"details"`
-	Contexts    []*PagerDutyContext    `json:"contexts,omitempty"`
+	ServiceKey  string      `json:"service_key"`
+	EventType   string      `json:"event_type"`
+	Description string      `json:"description"`
+	IncidentKey string      `json:"incident_key"`
+	Client      string      `json:"client,omitempty"`
+	ClientURL   string      `json:"client_url,omitempty"`
+	Details     interface{} `json:"details,omitempty"`
 }
 
 func (pd *PagerDutyRequest) Validate() error {

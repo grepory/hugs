@@ -1,6 +1,7 @@
 package notifier
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -9,7 +10,8 @@ import (
 	"github.com/opsee/basic/com"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
-	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
+	pdtmpl "github.com/opsee/notification-templates/dist/go/pagerduty"
+	log "github.com/sirupsen/logrus"
 )
 
 type PagerDutySender struct {
@@ -43,37 +45,51 @@ func (this PagerDutySender) Send(n *obj.Notification, e *obj.Event) error {
 		return err
 	}
 
-	templateContent := map[string]interface{}{
-		"check_id":       result.CheckId,
-		"check_name":     result.CheckName,
-		"group_name":     result.Target.Id,
-		"instance_count": len(result.Responses),
-		"fail_count":     len(failingResponses),
+	postMessageRequest := &obj.PagerDutyRequest{}
+	switch eventType {
+
+	case "resolve":
+		templateContent := map[string]interface{}{
+			"service_key":  serviceKey,
+			"incident_key": result.CheckId,
+		}
+
+		err = json.Unmarshal([]byte(pdTemplate.Render(templateContent)), postMessageRequest)
+		if err != nil {
+			return err
+		}
+
+	case "trigger":
+		templateContent := map[string]interface{}{
+			"service_key": serviceKey,
+			"check_name":  result.CheckName,
+			"check_id":    result.CheckId,
+			"group_name":  result.Target.Id,
+			"opsee_host":  "app.opsee.com",
+		}
+
+		if e.Nocap != nil {
+			if e.Nocap.JSONUrl != "" {
+				templateContent["json_url"] = url.QueryEscape(e.Nocap.JSONUrl)
+			} else {
+				templateContent["json_url"] = "?"
+			}
+		} else {
+			templateContent["json_url"] = "?"
+		}
+
+		log.Debug(string(pdTemplate.Render(templateContent)))
+		err = json.Unmarshal([]byte(pdTemplate.Render(templateContent)), postMessageRequest)
+		if err != nil {
+			return err
+		}
+		resultJson, _ := json.Marshal(result)
+		postMessageRequest.Details = string(resultJson)
+
 	}
 
-	contexts := []*obj.PagerDutyContext{}
-	if e.Nocap != nil && e.Nocap.JSONUrl != "" {
-		contexts = append(contexts, &obj.PagerDutyContext{
-			Type: "link",
-			// TODO(dan) remove the url from the fasdsdffl template
-			Href: fmt.Sprintf("https://app.opsee.com/check/%s/%s/event?json=%s&utm_medium=pagerduty&utm_campaign=app", url.QueryEscape(e.Nocap.JSONUrl)),
-			Text: "View complete check response.",
-		})
-	}
-
-	postMessageRequest := &obj.PagerDutyRequest{
-		ServiceKey:  serviceKey,
-		IncidentKey: result.CheckId,
-		EventType:   eventType,
-	}
-
-	if eventType == "trigger" {
-		postMessageRequest.Description = pdTemplate.Render(templateContent)
-		postMessageRequest.Details = templateContent
-		postMessageRequest.Contexts = contexts
-	}
-
-	_, err = postMessageRequest.Do()
+	response, err := postMessageRequest.Do()
+	log.Debug(response)
 	return err
 }
 
@@ -96,13 +112,13 @@ func (this PagerDutySender) getPagerDutyServiceKey(n *obj.Notification) (string,
 
 func NewPagerDutySender() (*PagerDutySender, error) {
 	// initialize check failing template
-	failTemplate, err := mustache.ParseString(slacktmpl.CheckFailing)
+	failTemplate, err := mustache.ParseString(pdtmpl.CheckFailing)
 	if err != nil {
 		return nil, err
 	}
 
 	// initialize check passing template
-	passTemplate, err := mustache.ParseString(slacktmpl.CheckPassing)
+	passTemplate, err := mustache.ParseString(pdtmpl.CheckPassing)
 	if err != nil {
 		return nil, err
 	}

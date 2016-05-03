@@ -276,6 +276,11 @@
 			"revisionTime": "2016-04-15T15:17:43-07:00"
 		},
 		{
+			"path": "github.com/opsee/notification-templates/dist/go/pagerduty",
+			"revision": "64208d379904bd136d254d08e98ad32fef5b4428",
+			"revisionTime": "2016-05-03T09:42:21-07:00"
+		},
+		{
 			"path": "github.com/opsee/notification-templates/dist/go/slack",
 			"revision": "ec0a0189ea0b1ea3d352edb1d36c300bcddd7901",
 			"revisionTime": "2016-04-01T14:32:28-07:00"
