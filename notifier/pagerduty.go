@@ -78,7 +78,7 @@ func (this PagerDutySender) Send(n *obj.Notification, e *obj.Event) error {
 			templateContent["json_url"] = "?"
 		}
 
-		log.Error(string(pdTemplate.Render(templateContent)))
+		log.Debug(string(pdTemplate.Render(templateContent)))
 		err = json.Unmarshal([]byte(pdTemplate.Render(templateContent)), postMessageRequest)
 		if err != nil {
 			return err
