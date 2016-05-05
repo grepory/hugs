@@ -92,7 +92,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		} else {
 			templateName = "check-fail-rds"
 		}
-		template["rds_db_name"] = result.Target.Id
+		templateContent["rds_db_name"] = result.Target.Id
 	}
 
 	mergeVars := templateContent
