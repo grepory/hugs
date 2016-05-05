@@ -104,6 +104,7 @@ func (this *Config) getAWSSession() {
 }
 
 func (this *Config) setLogLevel() {
+	defaultLevel := "debug"
 	if len(this.LogLevel) > 0 {
 		level, err := log.ParseLevel(this.LogLevel)
 		if err == nil {
@@ -111,7 +112,8 @@ func (this *Config) setLogLevel() {
 			return
 		}
 	}
-	log.WithFields(log.Fields{"config": "setLogLevel"}).Warn("Could not set log level!")
+	this.LogLevel = log.ParseLevel(defaultLevel)
+	log.WithFields(log.Fields{"config": "setLogLevel"}).Warn("Set level to %s", defaultLevel)
 }
 
 func GetConfig() *Config {
