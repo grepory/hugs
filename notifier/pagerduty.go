@@ -47,17 +47,17 @@ func (this PagerDutySender) Send(n *obj.Notification, e *obj.Event) error {
 
 	postMessageRequest := &obj.PagerDutyRequest{}
 	switch eventType {
-
 	case "resolve":
 		templateContent := map[string]interface{}{
-			"service_key":  serviceKey,
-			"incident_key": result.CheckId,
+			"service_key": serviceKey,
+			"check_id":    result.CheckId,
 		}
 
 		err = json.Unmarshal([]byte(pdTemplate.Render(templateContent)), postMessageRequest)
 		if err != nil {
 			return err
 		}
+		log.Debug(string(pdTemplate.Render(templateContent)))
 
 	case "trigger":
 		templateContent := map[string]interface{}{

@@ -15,6 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const DefaultLogLevel = "debug"
+
 // TODO(dan) consider splitting this into configs and testconfigs for each module
 type Config struct {
 	// PublicHost specifies the listen address for the API
@@ -104,14 +106,17 @@ func (this *Config) getAWSSession() {
 }
 
 func (this *Config) setLogLevel() {
-	if len(this.LogLevel) > 0 {
-		level, err := log.ParseLevel(this.LogLevel)
-		if err == nil {
-			log.SetLevel(level)
-			return
-		}
+
+	if this.LogLevel == "" {
+		this.LogLevel = DefaultLogLevel
+		log.Warn("Set log level to %s", DefaultLogLevel)
 	}
-	log.WithFields(log.Fields{"config": "setLogLevel"}).Warn("Could not set log level!")
+	level, err := log.ParseLevel(this.LogLevel)
+	if err == nil {
+		log.SetLevel(level)
+		return
+	}
+	log.WithError(err).Error("Invalid log level %s.  Using logrus default.", this.LogLevel)
 }
 
 func GetConfig() *Config {
