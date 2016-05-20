@@ -5,16 +5,16 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 )
 
-func (pg *Postgres) GetNotifications(user *com.User, oldNotifications []*obj.Notification) ([]*obj.Notification, error) {
+func (pg *Postgres) GetNotifications(user *schema.User, oldNotifications []*obj.Notification) ([]*obj.Notification, error) {
 	notifications := []*obj.Notification{}
 	for _, oldNotification := range oldNotifications {
-		newNotification, err := pg.GetNotification(user, oldNotification.ID)
+		newNotification, err := pg.GetNotification(user, oldNotification.Id)
 		if err != nil {
-			log.WithError(err).Errorf("Failed to get notification %d, for customerId %s", oldNotification.ID, user.CustomerID)
+			log.WithError(err).Errorf("Failed to get notification %d, for customerId %s", oldNotification.Id, user.CustomerId)
 		}
 		notifications = append(notifications, newNotification)
 	}
@@ -22,15 +22,15 @@ func (pg *Postgres) GetNotifications(user *com.User, oldNotifications []*obj.Not
 	return notifications, nil
 }
 
-func (pg *Postgres) GetNotification(user *com.User, id int) (*obj.Notification, error) {
+func (pg *Postgres) GetNotification(user *schema.User, id int) (*obj.Notification, error) {
 	notification := &obj.Notification{}
-	err := pg.db.Get(notification, "SELECT * FROM notifications WHERE customer_id = $1 AND id = $2", user.CustomerID, id)
+	err := pg.db.Get(notification, "SELECT * FROM notifications WHERE customer_id = $1 AND id = $2", user.CustomerId, id)
 	return notification, err
 }
 
-func (pg *Postgres) GetNotificationsByUser(user *com.User) ([]*obj.Notification, error) {
+func (pg *Postgres) GetNotificationsByUser(user *schema.User) ([]*obj.Notification, error) {
 	var notifications []*obj.Notification
-	rows, err := pg.db.Queryx("SELECT * from notifications WHERE customer_id = $1", user.CustomerID)
+	rows, err := pg.db.Queryx("SELECT * from notifications WHERE customer_id = $1", user.CustomerId)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (pg *Postgres) GetNotificationsByUser(user *com.User) ([]*obj.Notification,
 		var notification obj.Notification
 		err := rows.StructScan(&notification)
 		if err != nil {
-			log.WithError(err).Errorf("Couldn't scan notification for user %s", user.CustomerID)
+			log.WithError(err).Errorf("Couldn't scan notification for user %s", user.CustomerId)
 			return nil, err
 		}
 		notifications = append(notifications, &notification)
@@ -68,7 +68,7 @@ func (pg *Postgres) putNotification(x sqlx.Ext, notification *obj.Notification) 
 	return err
 }
 
-func (pg *Postgres) PutNotifications(user *com.User, notifications []*obj.Notification) error {
+func (pg *Postgres) PutNotifications(user *schema.User, notifications []*obj.Notification) error {
 	tx, err := pg.db.Beginx()
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (pg *Postgres) PutNotificationsMultiCheck(notificationsObjs []*obj.Notifica
 			notification := notificationsObj.Notifications[0]
 			err = pg.deleteNotificationsByCheckId(tx, notification)
 			if err != nil {
-				log.WithError(err).Errorf("Couldn't delete notifications for check %s for customerId %s", notification.CheckID, notification.CustomerID)
+				log.WithError(err).Errorf("Couldn't delete notifications for check %s for customerId %s", notification.CheckId, notification.CustomerId)
 				if err := tx.Rollback(); err != nil {
 					log.WithError(err).Error("Error rolling back transaction")
 				}
@@ -116,7 +116,7 @@ func (pg *Postgres) PutNotificationsMultiCheck(notificationsObjs []*obj.Notifica
 		for _, notification := range notificationsObj.Notifications {
 			err = pg.putNotification(tx, notification)
 			if err != nil {
-				log.WithError(err).Errorf("Couldn't put notification %d for customerId %s", notification.ID, notification.CustomerID)
+				log.WithError(err).Errorf("Couldn't put notification %d for customerId %s", notification.Id, notification.CustomerId)
 				if err := tx.Rollback(); err != nil {
 					log.WithError(err).Error("Error rolling back transaction")
 				}
@@ -136,7 +136,7 @@ func (pg *Postgres) DeleteNotifications(notifications []*obj.Notification) error
 	for _, notification := range notifications {
 		err = pg.deleteNotification(tx, notification)
 		if err != nil {
-			log.WithError(err).Errorf("Couldn't delete notification %s for customerId %s", notification.ID, notification.CustomerID)
+			log.WithError(err).Errorf("Couldn't delete notification %s for customerId %s", notification.Id, notification.CustomerId)
 			if err := tx.Rollback(); err != nil {
 				log.WithError(err).Error("Error rolling back transaction")
 			}
@@ -146,9 +146,9 @@ func (pg *Postgres) DeleteNotifications(notifications []*obj.Notification) error
 	return tx.Commit()
 }
 
-func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([]*obj.Notification, error) {
+func (pg *Postgres) GetNotificationsByCheckId(user *schema.User, checkId string) ([]*obj.Notification, error) {
 	notifications := []*obj.Notification{}
-	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1 AND customer_id = $2", checkID, user.CustomerID)
+	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1 AND customer_id = $2", checkId, user.CustomerId)
 	if err != nil {
 		return nil, err
 	}
@@ -156,9 +156,9 @@ func (pg *Postgres) GetNotificationsByCheckID(user *com.User, checkID string) ([
 	return notifications, nil
 }
 
-func (pg *Postgres) UnsafeGetNotificationsByCheckID(checkID string) ([]*obj.Notification, error) {
+func (pg *Postgres) UnsafeGetNotificationsByCheckId(checkId string) ([]*obj.Notification, error) {
 	notifications := []*obj.Notification{}
-	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1", checkID)
+	err := pg.db.Select(&notifications, "SELECT * from notifications WHERE check_id = $1", checkId)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +166,8 @@ func (pg *Postgres) UnsafeGetNotificationsByCheckID(checkID string) ([]*obj.Noti
 	return notifications, nil
 }
 
-func (pg *Postgres) DeleteNotification(user *com.User, notification *obj.Notification) error {
-	rows, err := pg.db.Queryx(`DELETE from notifications WHERE id=$1 AND customer_id=$2`, notification.ID, user.CustomerID)
+func (pg *Postgres) DeleteNotification(user *schema.User, notification *obj.Notification) error {
+	rows, err := pg.db.Queryx(`DELETE from notifications WHERE id=$1 AND customer_id=$2`, notification.Id, user.CustomerId)
 	if err != nil {
 		return err
 	}
@@ -175,8 +175,8 @@ func (pg *Postgres) DeleteNotification(user *com.User, notification *obj.Notific
 	return nil
 }
 
-func (pg *Postgres) DeleteNotificationsByUser(user *com.User) error {
-	rows, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1`, user.CustomerID)
+func (pg *Postgres) DeleteNotificationsByUser(user *schema.User) error {
+	rows, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1`, user.CustomerId)
 	if err != nil {
 		return err
 	}
@@ -184,8 +184,8 @@ func (pg *Postgres) DeleteNotificationsByUser(user *com.User) error {
 	return nil
 }
 
-func (pg *Postgres) DeleteNotificationsByCheckId(user *com.User, checkId string) error {
-	rows, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1 AND check_id=$2`, user.CustomerID, checkId)
+func (pg *Postgres) DeleteNotificationsByCheckId(user *schema.User, checkId string) error {
+	rows, err := pg.db.Queryx(`DELETE from notifications WHERE customer_id=$1 AND check_id=$2`, user.CustomerId, checkId)
 	if err != nil {
 		return err
 	}

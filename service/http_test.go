@@ -11,7 +11,7 @@ import (
 	"testing"
 	//"golang.org/x/net/context"
 
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
@@ -35,14 +35,14 @@ func startTestServer() {
 		AccessToken: "test",
 		Scope:       "test",
 		TeamName:    "test",
-		TeamID:      "test",
+		TeamId:      "test",
 		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
 		Bot: &obj.SlackBotCreds{
-			BotUserID:      "test",
+			BotUserId:      "test",
 			BotAccessToken: "test",
 		},
 	}
@@ -60,16 +60,16 @@ func startTestServer() {
 	log.Fatal(http.ListenAndServe(":7766", nil))
 }
 
-func GetUserAuthToken(user *com.User) string {
-	userstring := fmt.Sprintf(`{"id": %d, "customer_id": "%s", "user_id": "%s", "email": "%s", "verified": %t, "admin": %t, "active": %t}`, user.ID, user.CustomerID, user.ID, user.Email, user.Verified, user.Admin, user.Active)
+func GetUserAuthToken(user *schema.User) string {
+	userstring := fmt.Sprintf(`{"id": %d, "customer_id": "%s", "user_id": "%s", "email": "%s", "verified": %t, "admin": %t, "active": %t}`, user.Id, user.CustomerId, user.Id, user.Email, user.Verified, user.Admin, user.Active)
 	token := base64.StdEncoding.EncodeToString([]byte(userstring))
 	return fmt.Sprintf("Basic %s", token)
 }
 
 func fuckitTest() {
-	user := &com.User{
-		ID:         13,
-		CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+	user := &schema.User{
+		Id:         13,
+		CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 		Email:      "dan@opsee.com",
 		Name:       "Dan",
 		Verified:   true,
@@ -83,14 +83,14 @@ type ServiceTest struct {
 	Service       *Service
 	Router        *tp.Router
 	Notifications []*obj.Notification
-	User          *com.User
+	User          *schema.User
 	UserToken     string
 }
 
 func NewServiceTest() *ServiceTest {
-	user := &com.User{
-		ID:         13,
-		CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+	user := &schema.User{
+		Id:         13,
+		CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 		Email:      "dan@opsee.com",
 		Name:       "Dan",
 		Verified:   true,
@@ -125,26 +125,26 @@ func NewServiceTest() *ServiceTest {
 		UserToken: userAuthToken,
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         0,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00000",
+				Id:         0,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00000",
 				Value:      "C0ATUFZ7X", // this a channel
 				Type:       "slack_bot",
 			},
 			&obj.Notification{
-				ID:         1,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00000",
+				Id:         1,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00000",
 				Value:      "dan@opsee.com",
 				Type:       "email",
 			},
 			&obj.Notification{
-				ID:         2,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00000",
+				Id:         2,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00000",
 				Value:      "someslackhook.com",
 				Type:       "webhook",
 			},
@@ -166,7 +166,7 @@ func NewServiceTest() *ServiceTest {
 		AccessToken: config.GetConfig().SlackTestToken,
 		Scope:       "bot",
 		TeamName:    "opsee",
-		TeamID:      "opsee",
+		TeamId:      "opsee",
 		TeamDomain:  "opsee",
 		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
@@ -174,7 +174,7 @@ func NewServiceTest() *ServiceTest {
 			ConfigurationURL: "test",
 		},
 		Bot: &obj.SlackBotCreds{
-			BotUserID:      "test",
+			BotUserId:      "test",
 			BotAccessToken: config.GetConfig().SlackTestToken,
 		},
 	}
@@ -219,21 +219,21 @@ func TestGetNotifications(t *testing.T) {
 func TestPostNotificationsMultiCheck(t *testing.T) {
 	cn := []*obj.Notifications{
 		&obj.Notifications{
-			CheckID: "TestMultiEdit0",
+			CheckId: "TestMultiEdit0",
 			Notifications: []*obj.Notification{
 				&obj.Notification{
 					Value: "off 2",
 					Type:  "email",
 				},
 				&obj.Notification{
-					CheckID: "TestMultiEdit0",
+					CheckId: "TestMultiEdit0",
 					Value:   "off 2",
 					Type:    "email",
 				},
 			},
 		},
 		&obj.Notifications{
-			CheckID: "TestMultiEdit1",
+			CheckId: "TestMultiEdit1",
 			Notifications: []*obj.Notification{
 				&obj.Notification{
 					Value: "off 2",
@@ -282,18 +282,18 @@ func TestPostNotifications(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         99,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
+				Id:         99,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00002",
 				Value:      "off 2",
 				Type:       "email",
 			},
 			&obj.Notification{
-				ID:         98,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
+				Id:         98,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00002",
 				Value:      "off 2",
 				Type:       "email",
 			}},
@@ -334,10 +334,10 @@ func TestPutNotification(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         9999,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "666",
+				Id:         9999,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "666",
 				Value:      "off 2",
 				Type:       "email",
 			}},
@@ -362,7 +362,7 @@ func TestPutNotification(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, rw.Code)
 }
 
-func TestGetNotificationsByCheckID(t *testing.T) {
+func TestGetNotificationsByCheckId(t *testing.T) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/666", Common.Service.config.PublicHost), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -471,10 +471,10 @@ func TestPostSlackTest(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         0,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
+				Id:         0,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00002",
 				Value:      "C0ADACATT",
 				Type:       "slack_bot",
 			}},
@@ -504,10 +504,10 @@ func TestPostEmailTest(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         0,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
+				Id:         0,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00002",
 				Value:      "dan@opsee.com",
 				Type:       "email",
 			}},
@@ -537,10 +537,10 @@ func TestPostWebHookTest(t *testing.T) {
 	cn := &obj.Notifications{
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         1,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00002",
+				Id:         1,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00002",
 				Value:      "http://localhost:7766/hook",
 				Type:       "webhook",
 			}},

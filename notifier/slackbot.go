@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/hoisie/mustache"
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
@@ -89,7 +89,7 @@ func (this SlackBotSender) getSlackToken(n *obj.Notification) (string, error) {
 		return "", err
 	}
 
-	oaResponse, err := s.GetSlackOAuthResponse(&com.User{CustomerID: n.CustomerID})
+	oaResponse, err := s.GetSlackOAuthResponse(&schema.User{CustomerId: n.CustomerId})
 	if err != nil {
 		return "", err
 	}

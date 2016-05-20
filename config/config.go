@@ -41,16 +41,16 @@ type Config struct {
 	LogLevel string
 	// SlackClientSecret is the hugs Slack secret used during OAuth setup.
 	SlackClientSecret string `required:"true"`
-	// SlackClientID is used during OAuth setup.
-	SlackClientID string `required:"true"`
+	// SlackClientId is used during OAuth setup.
+	SlackClientId string `required:"true"`
 	// SlackTestToken is used during Slack integration setup.
 	SlackTestToken string
 	// SlackTestClientSecret is used when running tests to test the slack
 	// integration.
 	SlackTestClientSecret string
-	// SlackTestClientID is used when running tests to test the slack
+	// SlackTestClientId is used when running tests to test the slack
 	// integration.
-	SlackTestClientID string
+	SlackTestClientId string
 	// AWSSession is the shared `aws.Session` object used by all of the hugs components.
 	AWSSession *session.Session
 	// NotificaptionEndpoint is the URL of the notificaption service.
@@ -131,10 +131,10 @@ func GetConfig() *Config {
 			VapeEndpoint:          os.Getenv("HUGS_VAPE_ENDPOINT"),
 			VapeKey:               os.Getenv("HUGS_VAPE_KEYFILE"),
 			LogLevel:              os.Getenv("HUGS_LOG_LEVEL"),
-			SlackClientID:         os.Getenv("HUGS_SLACK_CLIENT_ID"),
+			SlackClientId:         os.Getenv("HUGS_SLACK_CLIENT_ID"),
 			SlackClientSecret:     os.Getenv("HUGS_SLACK_CLIENT_SECRET"),
 			SlackTestToken:        os.Getenv("HUGS_TEST_SLACK_TOKEN"),
-			SlackTestClientID:     os.Getenv("HUGS_TEST_SLACK_CLIENT_ID"),
+			SlackTestClientId:     os.Getenv("HUGS_TEST_SLACK_CLIENT_ID"),
 			SlackTestClientSecret: os.Getenv("HUGS_TEST_SLACK_CLIENT_SECRET"),
 			NotificaptionEndpoint: os.Getenv("HUGS_NOTIFICAPTION_ENDPOINT"),
 			BartnetEndpoint:       os.Getenv("HUGS_BARTNET_ENDPOINT"),

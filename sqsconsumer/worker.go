@@ -25,7 +25,7 @@ var (
 )
 
 type Worker struct {
-	ID                string
+	Id                string
 	SQS               *sqs.SQS
 	SQSUrl            string
 	Store             *store.Postgres
@@ -34,7 +34,7 @@ type Worker struct {
 	errCountThreshold int
 }
 
-func NewWorker(ID string, maxErr int, sqsUrl string) (*Worker, error) {
+func NewWorker(Id string, maxErr int, sqsUrl string) (*Worker, error) {
 	s, err := store.NewPostgres()
 	if err != nil {
 		return nil, err
@@ -44,12 +44,12 @@ func NewWorker(ID string, maxErr int, sqsUrl string) (*Worker, error) {
 	notifier, errMap := notifier.NewNotifier()
 	for k, v := range errMap {
 		if v != nil {
-			log.WithFields(log.Fields{"worker": ID, "error": v}).Info("Couldn't initialize notifier: ", k)
+			log.WithFields(log.Fields{"worker": Id, "error": v}).Info("Couldn't initialize notifier: ", k)
 		}
 	}
 
 	return &Worker{
-		ID:                ID,
+		Id:                Id,
 		SQS:               sqs.New(config.GetConfig().AWSSession),
 		SQSUrl:            sqsUrl,
 		Store:             s,
@@ -60,7 +60,7 @@ func NewWorker(ID string, maxErr int, sqsUrl string) (*Worker, error) {
 }
 
 func (w *Worker) Start() {
-	log.WithFields(log.Fields{"worker": w.ID}).Info("Starting up.")
+	log.WithFields(log.Fields{"worker": w.Id}).Info("Starting up.")
 
 	for {
 		w.Work()
@@ -91,7 +91,7 @@ func (w *Worker) deleteMessage(handle *string) error {
 }
 
 func (w *Worker) Work() {
-	log.WithFields(log.Fields{"worker": w.ID}).Info("Doing work...")
+	log.WithFields(log.Fields{"worker": w.Id}).Info("Doing work...")
 
 	input := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(w.SQSUrl),
@@ -101,7 +101,7 @@ func (w *Worker) Work() {
 	message, err := w.SQS.ReceiveMessage(input)
 
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"worker": w.ID}).Error("Encountered error polling SQS.  Sleeping...")
+		log.WithError(err).WithFields(log.Fields{"worker": w.Id}).Error("Encountered error polling SQS.  Sleeping...")
 
 		w.errCount += 1
 		if w.errCount >= w.errCountThreshold {
@@ -113,7 +113,7 @@ func (w *Worker) Work() {
 	}
 
 	if len(message.Messages) > 0 {
-		log.WithFields(log.Fields{"worker": w.ID, "message_count": len(message.Messages)}).Info("Got messages...")
+		log.WithFields(log.Fields{"worker": w.Id, "message_count": len(message.Messages)}).Info("Got messages...")
 		w.errCount = 0
 	}
 
@@ -125,33 +125,33 @@ func (w *Worker) Work() {
 
 		bodyBytes, err := base64.StdEncoding.DecodeString(*message.Body)
 		if err != nil {
-			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot decode message body")
+			log.WithFields(log.Fields{"worker": w.Id, "err": err, "message": *message.Body}).Error("Cannot decode message body")
 			info := make(map[string]interface{})
 			info["message"] = string(bodyBytes)
 			yeller.NotifyInfo(err, info)
 			if err := w.deleteMessage(message.ReceiptHandle); err != nil {
-				log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+				log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 			}
 		}
 
 		result := &schema.CheckResult{}
 		err = proto.Unmarshal(bodyBytes, result)
 		if err != nil {
-			log.WithFields(log.Fields{"worker": w.ID, "err": err, "message": *message.Body}).Error("Cannot unmarshal message body")
+			log.WithFields(log.Fields{"worker": w.Id, "err": err, "message": *message.Body}).Error("Cannot unmarshal message body")
 			info := make(map[string]interface{})
 			info["message"] = string(bodyBytes)
 			yeller.NotifyInfo(err, info)
 			if err := w.deleteMessage(message.ReceiptHandle); err != nil {
-				log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+				log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 			}
 		}
-		log.WithFields(log.Fields{"worker": w.ID, "CheckResult": result.String()}).Info("Unmarshalled CheckResult.")
+		log.WithFields(log.Fields{"worker": w.Id, "CheckResult": result.String()}).Info("Unmarshalled CheckResult.")
 
-		notifications, err := w.Store.UnsafeGetNotificationsByCheckID(result.CheckId)
+		notifications, err := w.Store.UnsafeGetNotificationsByCheckId(result.CheckId)
 		if err != nil {
 			//TODO(dan) send message back to sqs if you can't get notifications
 			// OR send notification to seperate SQS queue for redelivery
-			log.WithFields(log.Fields{"worker": w.ID}).Warn("Worker: Couldn't get notifications for event.")
+			log.WithFields(log.Fields{"worker": w.Id}).Warn("Worker: Couldn't get notifications for event.")
 			info := make(map[string]interface{})
 			info["message"] = string(bodyBytes)
 			yeller.NotifyInfo(err, info)
@@ -159,9 +159,9 @@ func (w *Worker) Work() {
 		}
 
 		if len(notifications) < 1 {
-			log.WithFields(log.Fields{"worker": w.ID, "check": result.CheckId}).Info("Deleting check with no notifications.")
+			log.WithFields(log.Fields{"worker": w.Id, "check": result.CheckId}).Info("Deleting check with no notifications.")
 			if err := w.deleteMessage(message.ReceiptHandle); err != nil {
-				log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+				log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 			}
 		} else {
 
@@ -171,12 +171,12 @@ func (w *Worker) Work() {
 				// Send notification with Notifier
 				sendErr := w.Notifier.Send(notification, event)
 				if sendErr != nil {
-					log.WithFields(log.Fields{"worker": w.ID, "err": sendErr}).Error("Error emitting notification")
+					log.WithFields(log.Fields{"worker": w.Id, "err": sendErr}).Error("Error emitting notification")
 				} else {
 					// If we successfully send one notification, then we're going to delete the SQS Message.
 					// TODO(greg): Separate queues per notification type.
 					if err := w.deleteMessage(message.ReceiptHandle); err != nil {
-						log.WithError(err).WithFields(log.Fields{"worker": w.ID, "message": *message.Body}).Error("Cannot delete message from SQS.")
+						log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 					}
 				}
 			}

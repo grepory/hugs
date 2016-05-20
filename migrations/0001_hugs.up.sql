@@ -1,5 +1,5 @@
 create table customers (
-    id UUID primary key
+    id UUId primary key
 );
 
 create table notification_types (
@@ -10,7 +10,7 @@ create table notification_types (
 create table notifications (
     id serial primary key,
     check_id varchar(255) not null,
-    customer_id UUID not null,
+    customer_id UUId not null,
     user_id int not null,
     type varchar(255) references notification_types(type),
     value varchar(255) not null
@@ -18,7 +18,7 @@ create table notifications (
 
 create table slack_oauth_responses (
     id serial primary key,
-    customer_id UUID references customers(id) on delete cascade,
+    customer_id UUId references customers(id) on delete cascade,
     data jsonb not null
 );
 

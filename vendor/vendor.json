@@ -241,11 +241,6 @@
 			"revisionTime": "2016-04-17T21:21:03+01:00"
 		},
 		{
-			"path": "github.com/opsee/basic/com",
-			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
-			"revisionTime": "2016-04-15T15:17:43-07:00"
-		},
-		{
 			"path": "github.com/opsee/basic/schema",
 			"revision": "59eaf30f0c277ffcea61fdca06ab4f1cdb000100",
 			"revisionTime": "2016-04-15T15:17:43-07:00"
@@ -406,5 +401,6 @@
 			"revision": "d3ddb4469d5a1b949fc7a7da7c1d6a0d1b6de994",
 			"revisionTime": "2016-03-17T10:50:43-07:00"
 		}
-	]
+	],
+	"rootPath": "github.com/opsee/hugs"
 }

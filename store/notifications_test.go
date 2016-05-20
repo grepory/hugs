@@ -33,20 +33,20 @@ func TestStoreGetNotifications(t *testing.T) {
 	log.Info("TestStoreGetNotifications: PASS.")
 }
 
-func TestStoreGetNotificationsByCheckID(t *testing.T) {
-	checkID := "00001"
-	log.Info("TestStoreGetNotificationsByCheckID: Getting Common.Notifications from store for CheckID ", checkID)
+func TestStoreGetNotificationsByCheckId(t *testing.T) {
+	checkId := "00001"
+	log.Info("TestStoreGetNotificationsByCheckId: Getting Common.Notifications from store for CheckId ", checkId)
 
-	notifications, err := Common.DBStore.GetNotificationsByCheckID(Common.User, checkID)
+	notifications, err := Common.DBStore.GetNotificationsByCheckId(Common.User, checkId)
 	if err != nil {
 		log.Error(err)
 		t.FailNow()
 	}
 	if len(notifications) != len(Common.Notifications) {
-		log.Error("TestStoreGetNotificationsByCheckID: Got ", len(notifications), ".")
+		log.Error("TestStoreGetNotificationsByCheckId: Got ", len(notifications), ".")
 		t.FailNow()
 	}
-	log.Info("TestStoreGetNotificationsByCheckID: PASS.")
+	log.Info("TestStoreGetNotificationsByCheckId: PASS.")
 }
 
 func TestStoreDeleteNotifications(t *testing.T) {

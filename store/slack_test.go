@@ -12,14 +12,14 @@ func TestStorePutSlackOAuthResponse(t *testing.T) {
 		AccessToken: "test",
 		Scope:       "test",
 		TeamName:    "test",
-		TeamID:      "test",
+		TeamId:      "test",
 		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
 		Bot: &obj.SlackBotCreds{
-			BotUserID:      "test",
+			BotUserId:      "test",
 			BotAccessToken: "test",
 		},
 	}
@@ -36,14 +36,14 @@ func TestStoreUpdateSlackOAuthResponse(t *testing.T) {
 		AccessToken: "test",
 		Scope:       "test",
 		TeamName:    "feck",
-		TeamID:      "test",
+		TeamId:      "test",
 		IncomingWebhook: &obj.SlackIncomingWebhook{
 			URL:              "test",
 			Channel:          "test",
 			ConfigurationURL: "test",
 		},
 		Bot: &obj.SlackBotCreds{
-			BotUserID:      "test",
+			BotUserId:      "test",
 			BotAccessToken: "test",
 		},
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/obj"
@@ -15,7 +15,7 @@ import (
 
 func (s *Service) postPagerDutyTest() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -37,7 +37,7 @@ func (s *Service) postPagerDutyTest() tp.HandleFunc {
 		}
 
 		event := obj.GenerateFailingTestEvent()
-		request.Notifications[0].CustomerID = user.CustomerID
+		request.Notifications[0].CustomerId = user.CustomerId
 
 		err = pdSender.Send(request.Notifications[0], event)
 		if err != nil {
@@ -52,7 +52,7 @@ func (s *Service) postPagerDutyTest() tp.HandleFunc {
 // Fetch slack token from database, check to see if the token is active
 func (s *Service) getPagerDutyToken() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -72,7 +72,7 @@ func (s *Service) getPagerDutyToken() tp.HandleFunc {
 
 func (s *Service) postPagerDutyCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}

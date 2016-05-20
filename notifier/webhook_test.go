@@ -27,9 +27,9 @@ func TestWebHookNotifier(t *testing.T) {
 	go setupWebhookTestServer()
 
 	notif := &obj.Notification{
-		CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-		UserID:     13,
-		CheckID:    "test",
+		CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+		UserId:     13,
+		CheckId:    "test",
 		Value:      "http://localhost:8888/hook",
 		Type:       "webhook",
 	}
