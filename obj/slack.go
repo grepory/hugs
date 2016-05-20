@@ -22,7 +22,7 @@ func escapeMessage(message string) string {
 }
 
 type SlackChannel struct {
-	ID   string `json:"id" required:"true"`
+	Id   string `json:"id" required:"true"`
 	Name string `json:"name" required:"true"`
 }
 
@@ -50,8 +50,8 @@ type SlackResponse struct {
 }
 
 type SlackOAuthResponseDBWrapper struct {
-	ID         int            `json:"id" db:"id"`
-	CustomerID string         `json:"customer_id" db:"customer_id" required:"true"`
+	Id         int            `json:"id" db:"id"`
+	CustomerId string         `json:"customer_id" db:"customer_id" required:"true"`
 	Data       types.JSONText `json:"data" db:"data" `
 }
 
@@ -65,7 +65,7 @@ type SlackOAuthResponse struct {
 	AccessToken     string                `json:"access_token" db:"access_token" required:"true"`
 	Scope           string                `json:"scope" db:"scope"`
 	TeamName        string                `json:"team_name" db:"team_name"`
-	TeamID          string                `json:"team_id" db:"team_id"`
+	TeamId          string                `json:"team_id" db:"team_id"`
 	TeamDomain      string                `json:"team_domain" db:"team_domain"`
 	IncomingWebhook *SlackIncomingWebhook `json:"incoming_webhook" db:"incoming_webhook"`
 	Bot             *SlackBotCreds        `json:"bot" db:"bot"`
@@ -89,7 +89,7 @@ func (this *SlackIncomingWebhook) Validate() error {
 }
 
 type SlackBotCreds struct {
-	BotUserID      string `json:"bot_user_id" db:"bot_user_id" required:"true"`
+	BotUserId      string `json:"bot_user_id" db:"bot_user_id" required:"true"`
 	BotAccessToken string `json:"bot_access_token" db:"bot_access_token" required:"true"`
 }
 
@@ -99,7 +99,7 @@ func (this *SlackBotCreds) Validate() error {
 }
 
 type SlackOAuthRequest struct {
-	ClientID     string `json:"client_id"`
+	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	Code         string `json:"code" required:"true"`
 	RedirectURI  string `json:"redirect_uri"`
@@ -119,7 +119,7 @@ func (this *SlackOAuthRequest) Do(endpoint string) (*SlackOAuthResponse, error) 
 		redirect_uri  - must match the originally submitted URI (if one was sent)
 	*/
 	values := url.Values{
-		"client_id":     {this.ClientID},
+		"client_id":     {this.ClientId},
 		"client_secret": {this.ClientSecret},
 		"code":          {this.Code},
 		"redirect_uri":  {this.RedirectURI},

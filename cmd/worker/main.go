@@ -16,7 +16,7 @@ func main() {
 		}
 	}()
 
-	// worker's ID, error threshold prior to idle
+	// worker's Id, error threshold prior to idle
 	worker, err := sqsconsumer.NewWorker(util.RandomString(5), 12, config.GetConfig().SqsUrl)
 	if err != nil {
 		log.Fatal(err)

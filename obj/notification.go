@@ -6,7 +6,7 @@ import (
 )
 
 type Notifications struct {
-	CheckID       string          `json:"check-id"`
+	CheckId       string          `json:"check-id"`
 	Notifications []*Notification `json:"notifications" db:"notifications"`
 }
 
@@ -21,10 +21,10 @@ func (this *Notifications) Validate() error {
 }
 
 type Notification struct {
-	ID         int    `json:"id" db:"id"`
-	CustomerID string `json:"customer_id" db:"customer_id"`
-	UserID     int    `json:"user_id" db:"user_id"`
-	CheckID    string `json:"check_id" db:"check_id"`
+	Id         int    `json:"id" db:"id"`
+	CustomerId string `json:"customer_id" db:"customer_id"`
+	UserId     int    `json:"user_id" db:"user_id"`
+	CheckId    string `json:"check_id" db:"check_id"`
 	Value      string `json:"value" db:"value" required:"true"`
 	Type       string `json:"type" db:"type" required:"true"`
 }

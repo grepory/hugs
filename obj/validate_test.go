@@ -8,10 +8,10 @@ import (
 
 func TestValidatorIsValid(t *testing.T) {
 	n := Notification{
-		ID:         1,
-		CustomerID: "test",
-		UserID:     1,
-		CheckID:    "test",
+		Id:         1,
+		CustomerId: "test",
+		UserId:     1,
+		CheckId:    "test",
 		Value:      "test",
 		Type:       "test",
 	}
@@ -22,8 +22,8 @@ func TestValidatorIsValid(t *testing.T) {
 
 func TestValidatorIsInvalid(t *testing.T) {
 	n := Notification{
-		CustomerID: "test",
-		UserID:     0,
+		CustomerId: "test",
+		UserId:     0,
 		Type:       "test",
 	}
 

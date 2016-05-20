@@ -1,20 +1,20 @@
 package store
 
 import (
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 )
 
 type Store interface {
-	GetNotifications(*com.User) ([]*obj.Notification, error)
-	GetNotificationsByCheckID(*com.User, string) ([]*obj.Notification, error)
-	UnsafeGetNotificationsByCheckID(string) ([]*obj.Notification, error)
-	PutNotification(*com.User, *obj.Notification) error
-	PutNotifications(*com.User, []*obj.Notification) error
-	UpdateNotification(*com.User, *obj.Notification) error
-	DeleteNotification(*com.User, *obj.Notification) error
-	DeleteNotifications(*com.User, []*obj.Notification) error
-	GetSlackOAuthResponse(*com.User) (*obj.SlackOAuthResponse, error)
-	UpdateSlackOAuthResponse(*com.User) error
-	PutSlackOAuthResponse(*com.User, *obj.SlackOAuthResponse) error
+	GetNotifications(*schema.User) ([]*obj.Notification, error)
+	GetNotificationsByCheckId(*schema.User, string) ([]*obj.Notification, error)
+	UnsafeGetNotificationsByCheckId(string) ([]*obj.Notification, error)
+	PutNotification(*schema.User, *obj.Notification) error
+	PutNotifications(*schema.User, []*obj.Notification) error
+	UpdateNotification(*schema.User, *obj.Notification) error
+	DeleteNotification(*schema.User, *obj.Notification) error
+	DeleteNotifications(*schema.User, []*obj.Notification) error
+	GetSlackOAuthResponse(*schema.User) (*obj.SlackOAuthResponse, error)
+	UpdateSlackOAuthResponse(*schema.User) error
+	PutSlackOAuthResponse(*schema.User, *obj.SlackOAuthResponse) error
 }

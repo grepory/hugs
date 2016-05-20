@@ -6,11 +6,11 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/jmoiron/sqlx/types"
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 )
 
-func (pg *Postgres) GetPagerDutyOAuthResponse(user *com.User) (*obj.PagerDutyOAuthResponse, error) {
+func (pg *Postgres) GetPagerDutyOAuthResponse(user *schema.User) (*obj.PagerDutyOAuthResponse, error) {
 	oaResponses, err := pg.GetPagerDutyOAuthResponses(user)
 	if err != nil {
 		return nil, err
@@ -23,9 +23,9 @@ func (pg *Postgres) GetPagerDutyOAuthResponse(user *com.User) (*obj.PagerDutyOAu
 	return nil, nil
 }
 
-func (pg *Postgres) GetPagerDutyOAuthResponses(user *com.User) ([]*obj.PagerDutyOAuthResponse, error) {
+func (pg *Postgres) GetPagerDutyOAuthResponses(user *schema.User) ([]*obj.PagerDutyOAuthResponse, error) {
 	oaResponses := []*obj.PagerDutyOAuthResponse{}
-	rows, err := pg.db.Queryx("SELECT data from pagerduty_oauth_responses WHERE customer_id = $1", user.CustomerID)
+	rows, err := pg.db.Queryx("SELECT data from pagerduty_oauth_responses WHERE customer_id = $1", user.CustomerId)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +50,13 @@ func (pg *Postgres) GetPagerDutyOAuthResponses(user *com.User) ([]*obj.PagerDuty
 	return oaResponses, err
 }
 
-func (pg *Postgres) UpdatePagerDutyOAuthResponse(user *com.User, s *obj.PagerDutyOAuthResponse) error {
+func (pg *Postgres) UpdatePagerDutyOAuthResponse(user *schema.User, s *obj.PagerDutyOAuthResponse) error {
 	datjson, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
 	data := types.JSONText(string(datjson))
-	rows, err := pg.db.Queryx(`UPDATE pagerduty_oauth_responses SET data=$1 where customer_id=$2`, data, user.CustomerID)
+	rows, err := pg.db.Queryx(`UPDATE pagerduty_oauth_responses SET data=$1 where customer_id=$2`, data, user.CustomerId)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (pg *Postgres) UpdatePagerDutyOAuthResponse(user *com.User, s *obj.PagerDut
 	return nil
 }
 
-func (pg *Postgres) PutPagerDutyOAuthResponse(user *com.User, s *obj.PagerDutyOAuthResponse) error {
+func (pg *Postgres) PutPagerDutyOAuthResponse(user *schema.User, s *obj.PagerDutyOAuthResponse) error {
 	datjson, err := json.Marshal(s)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (pg *Postgres) PutPagerDutyOAuthResponse(user *com.User, s *obj.PagerDutyOA
 	}
 
 	wrapper := obj.PagerDutyOAuthResponseDBWrapper{
-		CustomerID: user.CustomerID,
+		CustomerId: user.CustomerId,
 		Data:       types.JSONText(string(datjson)),
 	}
 
@@ -84,8 +84,8 @@ func (pg *Postgres) PutPagerDutyOAuthResponse(user *com.User, s *obj.PagerDutyOA
 	return err
 }
 
-func (pg *Postgres) DeletePagerDutyOAuthResponsesByUser(user *com.User) error {
-	rows, err := pg.db.Queryx(`DELETE from pagerduty_oauth_responses WHERE customer_id=$1`, user.CustomerID)
+func (pg *Postgres) DeletePagerDutyOAuthResponsesByUser(user *schema.User) error {
+	rows, err := pg.db.Queryx(`DELETE from pagerduty_oauth_responses WHERE customer_id=$1`, user.CustomerId)
 	if err != nil {
 		return err
 	}

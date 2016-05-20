@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/hoisie/mustache"
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	pdtmpl "github.com/opsee/notification-templates/dist/go/pagerduty"
@@ -99,7 +99,7 @@ func (this PagerDutySender) getPagerDutyServiceKey(n *obj.Notification) (string,
 		return "", err
 	}
 
-	oaResponse, err := s.GetPagerDutyOAuthResponse(&com.User{CustomerID: n.CustomerID})
+	oaResponse, err := s.GetPagerDutyOAuthResponse(&schema.User{CustomerId: n.CustomerId})
 	if err != nil {
 		return "", err
 	}

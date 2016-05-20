@@ -77,8 +77,8 @@ type PagerDutyResponse struct {
 }
 
 type PagerDutyOAuthResponseDBWrapper struct {
-	ID         int            `json:"id" db:"id"`
-	CustomerID string         `json:"customer_id" db:"customer_id" required:"true"`
+	Id         int            `json:"id" db:"id"`
+	CustomerId string         `json:"customer_id" db:"customer_id" required:"true"`
 	Data       types.JSONText `json:"data" db:"data"`
 }
 

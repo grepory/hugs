@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/nlopes/slack"
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/notifier"
@@ -18,7 +18,7 @@ import (
 // get code from GET params and return token
 func (s *Service) getSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -29,7 +29,7 @@ func (s *Service) getSlackCode() tp.HandleFunc {
 
 		// Might need to pass state as well...
 		oaRequest := &obj.SlackOAuthRequest{
-			ClientID:     config.GetConfig().SlackClientID,
+			ClientId:     config.GetConfig().SlackClientId,
 			ClientSecret: config.GetConfig().SlackClientSecret,
 			Code:         request.Code,
 			RedirectURI:  request.RedirectURI,
@@ -56,7 +56,7 @@ func (s *Service) getSlackCode() tp.HandleFunc {
 
 func (s *Service) postSlackTest() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -78,7 +78,7 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 		}
 
 		event := obj.GenerateTestEvent()
-		request.Notifications[0].CustomerID = user.CustomerID
+		request.Notifications[0].CustomerId = user.CustomerId
 
 		err = slackSender.Send(request.Notifications[0], event)
 		if err != nil {
@@ -94,7 +94,7 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 // TODO(dan) maybe store them in case we can't connect to slack.
 func (s *Service) getSlackChannels() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -118,7 +118,7 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 		respChannels := []*obj.SlackChannel{}
 		for _, channel := range channels {
 			slackChan := &obj.SlackChannel{
-				ID:   channel.ID,
+				Id:   channel.ID,
 				Name: channel.Name,
 			}
 			respChannels = append(respChannels, slackChan)
@@ -134,7 +134,7 @@ func (s *Service) getSlackChannels() tp.HandleFunc {
 // Fetch slack token from database, check to see if the token is active
 func (s *Service) getSlackToken() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -181,7 +181,7 @@ func (s *Service) getSlackToken() tp.HandleFunc {
 
 func (s *Service) postSlackCode() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -192,7 +192,7 @@ func (s *Service) postSlackCode() tp.HandleFunc {
 		}
 
 		oaRequest := &obj.SlackOAuthRequest{
-			ClientID:     config.GetConfig().SlackClientID,
+			ClientId:     config.GetConfig().SlackClientId,
 			ClientSecret: config.GetConfig().SlackClientSecret,
 			Code:         request.Code,
 			RedirectURI:  request.RedirectURI,

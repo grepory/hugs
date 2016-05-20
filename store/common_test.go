@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 	log "github.com/sirupsen/logrus"
 )
@@ -9,7 +9,7 @@ import (
 type StoreTest struct {
 	DBStore       *Postgres
 	Notifications []*obj.Notification
-	User          *com.User
+	User          *schema.User
 }
 
 func NewStoreTest() *StoreTest {
@@ -19,9 +19,9 @@ func NewStoreTest() *StoreTest {
 		panic(err)
 	}
 
-	user := &com.User{
-		ID:         13,
-		CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+	user := &schema.User{
+		Id:         13,
+		CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
 	}
 
 	log.Info("Clearing local test store of notifications")
@@ -35,26 +35,26 @@ func NewStoreTest() *StoreTest {
 		User:    user,
 		Notifications: []*obj.Notification{
 			&obj.Notification{
-				ID:         0,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00001",
+				Id:         0,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00001",
 				Value:      "off",
 				Type:       "slack_bot",
 			},
 			&obj.Notification{
-				ID:         1,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00001",
+				Id:         1,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00001",
 				Value:      "you",
 				Type:       "email",
 			},
 			&obj.Notification{
-				ID:         2,
-				CustomerID: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
-				UserID:     13,
-				CheckID:    "00001",
+				Id:         2,
+				CustomerId: "5963d7bc-6ba2-11e5-8603-6ba085b2f5b5",
+				UserId:     13,
+				CheckId:    "00001",
 				Value:      "fuck",
 				Type:       "webhook",
 			},

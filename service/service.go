@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
@@ -49,31 +49,31 @@ func (s *Service) NewRouter() *tp.Router {
 	rtr.Handle("GET", "/api/swagger.json", []tp.DecodeFunc{}, s.swagger())
 
 	// slack
-	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
-	rtr.Handle("POST", "/services/slack/test", decoders(com.User{}, obj.Notifications{}), s.postSlackTest())
-	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackChannels())
-	rtr.Handle("POST", "/services/slack", decoders(com.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
-	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getSlackToken())
+	rtr.Handle("GET", "/services/slack/code", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.RequestDecodeFunc(requestKey, obj.SlackOAuthRequest{})}, s.getSlackCode())
+	rtr.Handle("POST", "/services/slack/test", decoders(schema.User{}, obj.Notifications{}), s.postSlackTest())
+	rtr.Handle("GET", "/services/slack/channels", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{})}, s.getSlackChannels())
+	rtr.Handle("POST", "/services/slack", decoders(schema.User{}, obj.SlackOAuthRequest{}), s.postSlackCode())
+	rtr.Handle("GET", "/services/slack", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{})}, s.getSlackToken())
 
 	// pagerduty
-	rtr.Handle("POST", "/services/pagerduty", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.RequestDecodeFunc(requestKey, obj.PagerDutyOAuthResponse{})}, s.postPagerDutyCode())
-	rtr.Handle("GET", "/services/pagerduty", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{})}, s.getPagerDutyToken())
-	rtr.Handle("POST", "/services/pagerduty/test", decoders(com.User{}, obj.Notifications{}), s.postPagerDutyTest())
+	rtr.Handle("POST", "/services/pagerduty", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.RequestDecodeFunc(requestKey, obj.PagerDutyOAuthResponse{})}, s.postPagerDutyCode())
+	rtr.Handle("GET", "/services/pagerduty", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{})}, s.getPagerDutyToken())
+	rtr.Handle("POST", "/services/pagerduty/test", decoders(schema.User{}, obj.Notifications{}), s.postPagerDutyTest())
 
 	// email
-	rtr.Handle("POST", "/services/email/test", decoders(com.User{}, obj.Notifications{}), s.postEmailTest())
+	rtr.Handle("POST", "/services/email/test", decoders(schema.User{}, obj.Notifications{}), s.postEmailTest())
 
 	// webhooks
-	rtr.Handle("POST", "/services/webhook/test", decoders(com.User{}, obj.Notifications{}), s.postWebHookTest())
+	rtr.Handle("POST", "/services/webhook/test", decoders(schema.User{}, obj.Notifications{}), s.postWebHookTest())
 
 	// notifications
-	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
-	rtr.Handle("POST", "/notifications", decoders(com.User{}, obj.Notifications{}), s.postNotifications())
-	rtr.Handle("POST", "/notifications-multicheck", decoders(com.User{}, []*obj.Notifications{}), s.postNotificationsMultiCheck())
-	rtr.Handle("DELETE", "/notifications", decoders(com.User{}, obj.Notifications{}), s.deleteNotifications())
-	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckID())
-	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, com.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckID())
-	rtr.Handle("PUT", "/notifications/:check_id", decoders(com.User{}, obj.Notifications{}), s.putNotificationsByCheckID())
+	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
+	rtr.Handle("POST", "/notifications", decoders(schema.User{}, obj.Notifications{}), s.postNotifications())
+	rtr.Handle("POST", "/notifications-multicheck", decoders(schema.User{}, []*obj.Notifications{}), s.postNotificationsMultiCheck())
+	rtr.Handle("DELETE", "/notifications", decoders(schema.User{}, obj.Notifications{}), s.deleteNotifications())
+	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckId())
+	rtr.Handle("GET", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotificationsByCheckId())
+	rtr.Handle("PUT", "/notifications/:check_id", decoders(schema.User{}, obj.Notifications{}), s.putNotificationsByCheckId())
 	rtr.Timeout(5 * time.Minute)
 
 	return rtr

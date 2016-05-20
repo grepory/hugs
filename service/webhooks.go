@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/opsee/basic/com"
+	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/obj"
@@ -15,7 +15,7 @@ import (
 
 func (s *Service) postWebHookTest() tp.HandleFunc {
 	return func(ctx context.Context) (interface{}, int, error) {
-		user, ok := ctx.Value(userKey).(*com.User)
+		user, ok := ctx.Value(userKey).(*schema.User)
 		if !ok {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
@@ -37,7 +37,7 @@ func (s *Service) postWebHookTest() tp.HandleFunc {
 		}
 
 		event := obj.GenerateTestEvent()
-		request.Notifications[0].CustomerID = user.CustomerID
+		request.Notifications[0].CustomerId = user.CustomerId
 
 		err = webHookSender.Send(request.Notifications[0], event)
 		if err != nil {
