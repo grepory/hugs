@@ -69,6 +69,8 @@ func (s *Service) NewRouter() *tp.Router {
 	// notifications
 	rtr.Handle("GET", "/notifications", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.ParamsDecoder(paramsKey)}, s.getNotifications())
 	rtr.Handle("POST", "/notifications", decoders(schema.User{}, obj.Notifications{}), s.postNotifications())
+	rtr.Handle("POST", "/notifications-default", decoders(schema.User{}, []*obj.Notification{}), s.postNotificationsDefault())
+	rtr.Handle("GET", "/notifications-default", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{})}, s.getNotificationsDefault())
 	rtr.Handle("POST", "/notifications-multicheck", decoders(schema.User{}, []*obj.Notifications{}), s.postNotificationsMultiCheck())
 	rtr.Handle("DELETE", "/notifications", decoders(schema.User{}, obj.Notifications{}), s.deleteNotifications())
 	rtr.Handle("DELETE", "/notifications/:check_id", []tp.DecodeFunc{tp.AuthorizationDecodeFunc(userKey, schema.User{}), tp.ParamsDecoder(paramsKey)}, s.deleteNotificationsByCheckId())

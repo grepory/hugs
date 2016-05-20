@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/julienschmidt/httprouter"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/obj"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -28,6 +28,23 @@ func (s *Service) getNotifications() tp.HandleFunc {
 		response := &obj.Notifications{Notifications: notifications}
 
 		return response, http.StatusOK, nil
+	}
+}
+
+func (s *Service) getNotificationsDefault() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*schema.User)
+		if !ok {
+			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		notifications, err := s.db.GetDefaultNotifications(user)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "getNotificationsDefault", "error": err}).Error("Couldn't get default notifications from database.")
+			return nil, http.StatusBadRequest, err
+		}
+
+		return notifications, http.StatusOK, nil
 	}
 }
 
@@ -67,6 +84,39 @@ func (s *Service) postNotifications() tp.HandleFunc {
 		}
 
 		return notifs, http.StatusCreated, nil
+	}
+}
+
+func (s *Service) postNotificationsDefault() tp.HandleFunc {
+	return func(ctx context.Context) (interface{}, int, error) {
+		user, ok := ctx.Value(userKey).(*schema.User)
+		if !ok {
+			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
+		}
+
+		request, ok := ctx.Value(requestKey).(*[]*obj.Notification)
+		if !ok || request == nil {
+			return nil, http.StatusBadRequest, errors.New("Unable to get notifications from request context")
+		}
+
+		// Set notifications customerID
+		for _, notif := range *request {
+			notif.CustomerId = user.CustomerId
+		}
+
+		err := s.db.PutDefaultNotifications(user, *request)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "putNotificationsDefault", "error": err}).Error("Couldn't put default notifications in database.")
+			return nil, http.StatusInternalServerError, err
+		}
+
+		result, err := s.db.GetDefaultNotifications(user)
+		if err != nil {
+			log.WithFields(log.Fields{"service": "putNotificationsDefault", "error": err}).Error("Failed to get default notifications.")
+			return nil, http.StatusInternalServerError, err
+		}
+
+		return result, http.StatusCreated, nil
 	}
 }
 

@@ -362,6 +362,45 @@ func TestPutNotification(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, rw.Code)
 }
 
+func TestDefaultNotifications(t *testing.T) {
+	cn := []*obj.Notification{
+		{
+			Value: "dorkus@dork.us",
+			Type:  "email",
+		},
+		{
+			Value: "#generel",
+			Type:  "slack_bot",
+		},
+	}
+
+	cnBytes, err := json.Marshal(cn)
+	if err != nil {
+		t.FailNow()
+	}
+
+	rdr := bytes.NewBufferString(string(cnBytes))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/notifications-default", Common.Service.config.PublicHost), rdr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", Common.UserToken)
+
+	rw := httptest.NewRecorder()
+
+	Common.Service.router.ServeHTTP(rw, req)
+	assert.Equal(t, http.StatusCreated, rw.Code)
+
+	var response []*obj.Notification
+	err = json.NewDecoder(rw.Body).Decode(&response)
+	if err != nil {
+		t.FailNow()
+	}
+
+	assert.Equal(t, 2, len(response))
+}
+
 func TestGetNotificationsByCheckId(t *testing.T) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/notifications/666", Common.Service.config.PublicHost), nil)
 	if err != nil {
