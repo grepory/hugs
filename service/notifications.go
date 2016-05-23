@@ -44,7 +44,9 @@ func (s *Service) getNotificationsDefault() tp.HandleFunc {
 			return nil, http.StatusBadRequest, err
 		}
 
-		return notifications, http.StatusOK, nil
+		response := &obj.Notifications{Notifications: notifications}
+
+		return response, http.StatusOK, nil
 	}
 }
 
@@ -94,17 +96,17 @@ func (s *Service) postNotificationsDefault() tp.HandleFunc {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		request, ok := ctx.Value(requestKey).(*[]*obj.Notification)
+		request, ok := ctx.Value(requestKey).(*obj.Notifications)
 		if !ok || request == nil {
 			return nil, http.StatusBadRequest, errors.New("Unable to get notifications from request context")
 		}
 
 		// Set notifications customerID
-		for _, notif := range *request {
+		for _, notif := range request.Notifications {
 			notif.CustomerId = user.CustomerId
 		}
 
-		err := s.db.PutDefaultNotifications(user, *request)
+		err := s.db.PutDefaultNotifications(user, request.Notifications)
 		if err != nil {
 			log.WithFields(log.Fields{"service": "putNotificationsDefault", "error": err}).Error("Couldn't put default notifications in database.")
 			return nil, http.StatusInternalServerError, err
@@ -116,7 +118,9 @@ func (s *Service) postNotificationsDefault() tp.HandleFunc {
 			return nil, http.StatusInternalServerError, err
 		}
 
-		return result, http.StatusCreated, nil
+		response := &obj.Notifications{Notifications: result}
+
+		return response, http.StatusCreated, nil
 	}
 }
 

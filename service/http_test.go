@@ -363,14 +363,16 @@ func TestPutNotification(t *testing.T) {
 }
 
 func TestDefaultNotifications(t *testing.T) {
-	cn := []*obj.Notification{
-		{
-			Value: "dorkus@dork.us",
-			Type:  "email",
-		},
-		{
-			Value: "#generel",
-			Type:  "slack_bot",
+	cn := &obj.Notifications{
+		Notifications: []*obj.Notification{
+			{
+				Value: "dorkus@dork.us",
+				Type:  "email",
+			},
+			{
+				Value: "#generel",
+				Type:  "slack_bot",
+			},
 		},
 	}
 
@@ -392,13 +394,13 @@ func TestDefaultNotifications(t *testing.T) {
 	Common.Service.router.ServeHTTP(rw, req)
 	assert.Equal(t, http.StatusCreated, rw.Code)
 
-	var response []*obj.Notification
-	err = json.NewDecoder(rw.Body).Decode(&response)
+	response := &obj.Notifications{}
+	err = json.NewDecoder(rw.Body).Decode(response)
 	if err != nil {
 		t.FailNow()
 	}
 
-	assert.Equal(t, 2, len(response))
+	assert.Equal(t, 2, len(response.Notifications))
 }
 
 func TestGetNotificationsByCheckId(t *testing.T) {
