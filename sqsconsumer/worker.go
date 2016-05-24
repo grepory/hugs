@@ -4,6 +4,7 @@ import (
 	//"encoding/json"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -164,8 +165,19 @@ func (w *Worker) Work() {
 				log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 			}
 		} else {
-
 			event := buildEvent(notifications[0], result)
+
+			var msg string
+			if event.Result.Passing {
+				msg = "Sending passing notifications to customer."
+			} else {
+				msg = "Sending failing notifications to customer."
+			}
+
+			log.WithFields(log.Fields{
+				"customer_id": event.Result.CustomerId,
+				"check_id":    event.Result.CheckId,
+			}).Info(msg)
 
 			for _, notification := range notifications {
 				// Send notification with Notifier
@@ -173,6 +185,10 @@ func (w *Worker) Work() {
 				if sendErr != nil {
 					log.WithFields(log.Fields{"worker": w.Id, "err": sendErr}).Error("Error emitting notification")
 				} else {
+					log.WithFields(log.Fields{
+						"customer_id": event.Result.CustomerId,
+						"check_id":    event.Result.CheckId,
+					}).Info(fmt.Sprintf("Sent %s notification to customer.", notification.Type))
 					// If we successfully send one notification, then we're going to delete the SQS Message.
 					// TODO(greg): Separate queues per notification type.
 					if err := w.deleteMessage(message.ReceiptHandle); err != nil {
