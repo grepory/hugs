@@ -36,6 +36,14 @@ message Check {
 		HttpCheck http_check = 101;
 		CloudWatchCheck cloudwatch_check = 102;
 	}
+	repeated Notification notifications = 9;
+	string customer_id = 10;
+	string execution_group_id = 11;
+}
+
+message Notification {
+	string type = 1;
+	string value = 2;
 }
 
 message Assertion {
