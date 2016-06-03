@@ -26,6 +26,8 @@ type BastionState struct {
 	CustomerId string                 `protobuf:"bytes,2,opt,name=customer_id,json=customerId,proto3" json:"customer_id,omitempty" db:"customer_id"`
 	Status     string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	LastSeen   *opsee_types.Timestamp `protobuf:"bytes,4,opt,name=last_seen,json=lastSeen" json:"last_seen,omitempty" db:"last_seen"`
+	Region     string                 `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
+	VpcId      string                 `protobuf:"bytes,6,opt,name=vpc_id,json=vpcId,proto3" json:"vpc_id,omitempty"`
 }
 
 func (m *BastionState) Reset()                    { *m = BastionState{} }
@@ -71,9 +73,40 @@ func (m *Stack) GetUpdatedAt() *opsee_types.Timestamp {
 	return nil
 }
 
+type RoleStack struct {
+	ExternalId string                 `protobuf:"bytes,1,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty" db:"external_id"`
+	CustomerId string                 `protobuf:"bytes,2,opt,name=customer_id,json=customerId,proto3" json:"customer_id,omitempty" db:"customer_id"`
+	StackId    string                 `protobuf:"bytes,3,opt,name=stack_id,json=stackId,proto3" json:"stack_id,omitempty" db:"stack_id"`
+	StackName  string                 `protobuf:"bytes,4,opt,name=stack_name,json=stackName,proto3" json:"stack_name,omitempty" db:"stack_name"`
+	Region     string                 `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
+	Active     bool                   `protobuf:"varint,6,opt,name=active,proto3" json:"active,omitempty"`
+	CreatedAt  *opsee_types.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt  *opsee_types.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt" json:"updated_at,omitempty" db:"updated_at"`
+}
+
+func (m *RoleStack) Reset()                    { *m = RoleStack{} }
+func (m *RoleStack) String() string            { return proto.CompactTextString(m) }
+func (*RoleStack) ProtoMessage()               {}
+func (*RoleStack) Descriptor() ([]byte, []int) { return fileDescriptorStack, []int{2} }
+
+func (m *RoleStack) GetCreatedAt() *opsee_types.Timestamp {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return nil
+}
+
+func (m *RoleStack) GetUpdatedAt() *opsee_types.Timestamp {
+	if m != nil {
+		return m.UpdatedAt
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*BastionState)(nil), "opsee.BastionState")
 	proto.RegisterType((*Stack)(nil), "opsee.Stack")
+	proto.RegisterType((*RoleStack)(nil), "opsee.RoleStack")
 }
 func (this *BastionState) Equal(that interface{}) bool {
 	if that == nil {
@@ -110,6 +143,12 @@ func (this *BastionState) Equal(that interface{}) bool {
 		return false
 	}
 	if !this.LastSeen.Equal(that1.LastSeen) {
+		return false
+	}
+	if this.Region != that1.Region {
+		return false
+	}
+	if this.VpcId != that1.VpcId {
 		return false
 	}
 	return true
@@ -168,6 +207,57 @@ func (this *Stack) Equal(that interface{}) bool {
 	}
 	return true
 }
+func (this *RoleStack) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*RoleStack)
+	if !ok {
+		that2, ok := that.(RoleStack)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.ExternalId != that1.ExternalId {
+		return false
+	}
+	if this.CustomerId != that1.CustomerId {
+		return false
+	}
+	if this.StackId != that1.StackId {
+		return false
+	}
+	if this.StackName != that1.StackName {
+		return false
+	}
+	if this.Region != that1.Region {
+		return false
+	}
+	if this.Active != that1.Active {
+		return false
+	}
+	if !this.CreatedAt.Equal(that1.CreatedAt) {
+		return false
+	}
+	if !this.UpdatedAt.Equal(that1.UpdatedAt) {
+		return false
+	}
+	return true
+}
 
 type BastionStateGetter interface {
 	GetBastionState() *BastionState
@@ -180,6 +270,12 @@ type StackGetter interface {
 }
 
 var GraphQLStackType *github_com_graphql_go_graphql.Object
+
+type RoleStackGetter interface {
+	GetRoleStack() *RoleStack
+}
+
+var GraphQLRoleStackType *github_com_graphql_go_graphql.Object
 
 func init() {
 	GraphQLBastionStateType = github_com_graphql_go_graphql.NewObject(github_com_graphql_go_graphql.ObjectConfig{
@@ -267,6 +363,44 @@ func init() {
 							return face.GetLastSeen(), nil
 						}
 						return nil, fmt.Errorf("field last_seen not resolved")
+					},
+				},
+				"region": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*BastionState)
+						if ok {
+							return obj.Region, nil
+						}
+						inter, ok := p.Source.(BastionStateGetter)
+						if ok {
+							face := inter.GetBastionState()
+							if face == nil {
+								return nil, nil
+							}
+							return face.Region, nil
+						}
+						return nil, fmt.Errorf("field region not resolved")
+					},
+				},
+				"vpc_id": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*BastionState)
+						if ok {
+							return obj.VpcId, nil
+						}
+						inter, ok := p.Source.(BastionStateGetter)
+						if ok {
+							face := inter.GetBastionState()
+							if face == nil {
+								return nil, nil
+							}
+							return face.VpcId, nil
+						}
+						return nil, fmt.Errorf("field vpc_id not resolved")
 					},
 				},
 			}
@@ -463,6 +597,178 @@ func init() {
 			}
 		}),
 	})
+	GraphQLRoleStackType = github_com_graphql_go_graphql.NewObject(github_com_graphql_go_graphql.ObjectConfig{
+		Name:        "schemaRoleStack",
+		Description: "",
+		Fields: (github_com_graphql_go_graphql.FieldsThunk)(func() github_com_graphql_go_graphql.Fields {
+			return github_com_graphql_go_graphql.Fields{
+				"external_id": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							return obj.ExternalId, nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							return face.ExternalId, nil
+						}
+						return nil, fmt.Errorf("field external_id not resolved")
+					},
+				},
+				"customer_id": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							return obj.CustomerId, nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							return face.CustomerId, nil
+						}
+						return nil, fmt.Errorf("field customer_id not resolved")
+					},
+				},
+				"stack_id": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							return obj.StackId, nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							return face.StackId, nil
+						}
+						return nil, fmt.Errorf("field stack_id not resolved")
+					},
+				},
+				"stack_name": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							return obj.StackName, nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							return face.StackName, nil
+						}
+						return nil, fmt.Errorf("field stack_name not resolved")
+					},
+				},
+				"region": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.String,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							return obj.Region, nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							return face.Region, nil
+						}
+						return nil, fmt.Errorf("field region not resolved")
+					},
+				},
+				"active": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.Boolean,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							return obj.Active, nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							return face.Active, nil
+						}
+						return nil, fmt.Errorf("field active not resolved")
+					},
+				},
+				"created_at": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_opsee_protobuf_plugin_graphql_scalars.Timestamp,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							if obj.CreatedAt == nil {
+								return nil, nil
+							}
+							return obj.GetCreatedAt(), nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							if face.CreatedAt == nil {
+								return nil, nil
+							}
+							return face.GetCreatedAt(), nil
+						}
+						return nil, fmt.Errorf("field created_at not resolved")
+					},
+				},
+				"updated_at": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_opsee_protobuf_plugin_graphql_scalars.Timestamp,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*RoleStack)
+						if ok {
+							if obj.UpdatedAt == nil {
+								return nil, nil
+							}
+							return obj.GetUpdatedAt(), nil
+						}
+						inter, ok := p.Source.(RoleStackGetter)
+						if ok {
+							face := inter.GetRoleStack()
+							if face == nil {
+								return nil, nil
+							}
+							if face.UpdatedAt == nil {
+								return nil, nil
+							}
+							return face.GetUpdatedAt(), nil
+						}
+						return nil, fmt.Errorf("field updated_at not resolved")
+					},
+				},
+			}
+		}),
+	})
 }
 func (m *BastionState) Marshal() (data []byte, err error) {
 	size := m.Size()
@@ -506,6 +812,18 @@ func (m *BastionState) MarshalTo(data []byte) (int, error) {
 			return 0, err
 		}
 		i += n1
+	}
+	if len(m.Region) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.Region)))
+		i += copy(data[i:], m.Region)
+	}
+	if len(m.VpcId) > 0 {
+		data[i] = 0x32
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.VpcId)))
+		i += copy(data[i:], m.VpcId)
 	}
 	return i, nil
 }
@@ -589,6 +907,84 @@ func (m *Stack) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *RoleStack) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *RoleStack) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.ExternalId) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.ExternalId)))
+		i += copy(data[i:], m.ExternalId)
+	}
+	if len(m.CustomerId) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.CustomerId)))
+		i += copy(data[i:], m.CustomerId)
+	}
+	if len(m.StackId) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.StackId)))
+		i += copy(data[i:], m.StackId)
+	}
+	if len(m.StackName) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.StackName)))
+		i += copy(data[i:], m.StackName)
+	}
+	if len(m.Region) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintStack(data, i, uint64(len(m.Region)))
+		i += copy(data[i:], m.Region)
+	}
+	if m.Active {
+		data[i] = 0x30
+		i++
+		if m.Active {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.CreatedAt != nil {
+		data[i] = 0x3a
+		i++
+		i = encodeVarintStack(data, i, uint64(m.CreatedAt.Size()))
+		n4, err := m.CreatedAt.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n4
+	}
+	if m.UpdatedAt != nil {
+		data[i] = 0x42
+		i++
+		i = encodeVarintStack(data, i, uint64(m.UpdatedAt.Size()))
+		n5, err := m.UpdatedAt.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n5
+	}
+	return i, nil
+}
+
 func encodeFixed64Stack(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -624,6 +1020,8 @@ func NewPopulatedBastionState(r randyStack, easy bool) *BastionState {
 	if r.Intn(10) != 0 {
 		this.LastSeen = opsee_types.NewPopulatedTimestamp(r, easy)
 	}
+	this.Region = randStringStack(r)
+	this.VpcId = randStringStack(r)
 	if !easy && r.Intn(10) != 0 {
 	}
 	return this
@@ -641,6 +1039,25 @@ func NewPopulatedStack(r randyStack, easy bool) *Stack {
 	this.State = randStringStack(r)
 	this.Password = randStringStack(r)
 	this.PasswordHash = randStringStack(r)
+	if r.Intn(10) != 0 {
+		this.CreatedAt = opsee_types.NewPopulatedTimestamp(r, easy)
+	}
+	if r.Intn(10) != 0 {
+		this.UpdatedAt = opsee_types.NewPopulatedTimestamp(r, easy)
+	}
+	if !easy && r.Intn(10) != 0 {
+	}
+	return this
+}
+
+func NewPopulatedRoleStack(r randyStack, easy bool) *RoleStack {
+	this := &RoleStack{}
+	this.ExternalId = randStringStack(r)
+	this.CustomerId = randStringStack(r)
+	this.StackId = randStringStack(r)
+	this.StackName = randStringStack(r)
+	this.Region = randStringStack(r)
+	this.Active = bool(bool(r.Intn(2) == 0))
 	if r.Intn(10) != 0 {
 		this.CreatedAt = opsee_types.NewPopulatedTimestamp(r, easy)
 	}
@@ -743,6 +1160,14 @@ func (m *BastionState) Size() (n int) {
 		l = m.LastSeen.Size()
 		n += 1 + l + sovStack(uint64(l))
 	}
+	l = len(m.Region)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
+	l = len(m.VpcId)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
 	return n
 }
 
@@ -775,6 +1200,43 @@ func (m *Stack) Size() (n int) {
 	l = len(m.PasswordHash)
 	if l > 0 {
 		n += 1 + l + sovStack(uint64(l))
+	}
+	if m.CreatedAt != nil {
+		l = m.CreatedAt.Size()
+		n += 1 + l + sovStack(uint64(l))
+	}
+	if m.UpdatedAt != nil {
+		l = m.UpdatedAt.Size()
+		n += 1 + l + sovStack(uint64(l))
+	}
+	return n
+}
+
+func (m *RoleStack) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.ExternalId)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
+	l = len(m.CustomerId)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
+	l = len(m.StackId)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
+	l = len(m.StackName)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
+	l = len(m.Region)
+	if l > 0 {
+		n += 1 + l + sovStack(uint64(l))
+	}
+	if m.Active {
+		n += 2
 	}
 	if m.CreatedAt != nil {
 		l = m.CreatedAt.Size()
@@ -948,6 +1410,64 @@ func (m *BastionState) Unmarshal(data []byte) error {
 			if err := m.LastSeen.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Region", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Region = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VpcId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VpcId = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1279,6 +1799,287 @@ func (m *Stack) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *RoleStack) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowStack
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RoleStack: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RoleStack: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExternalId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExternalId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CustomerId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CustomerId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StackId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StackId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StackName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StackName = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Region", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Region = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Active", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Active = bool(v != 0)
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CreatedAt == nil {
+				m.CreatedAt = &opsee_types.Timestamp{}
+			}
+			if err := m.CreatedAt.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdatedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowStack
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthStack
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.UpdatedAt == nil {
+				m.UpdatedAt = &opsee_types.Timestamp{}
+			}
+			if err := m.UpdatedAt.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipStack(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthStack
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipStack(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -1385,33 +2186,41 @@ var (
 )
 
 var fileDescriptorStack = []byte{
-	// 446 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x52, 0x3d, 0x8f, 0xd3, 0x40,
-	0x14, 0x94, 0xef, 0xce, 0xbe, 0x78, 0x1d, 0xee, 0x4e, 0xcb, 0xe9, 0x64, 0x1d, 0x52, 0x02, 0x2b,
-	0x84, 0xa0, 0x88, 0x83, 0x40, 0x34, 0xa9, 0x88, 0x1b, 0x3e, 0xca, 0x0d, 0x15, 0x8d, 0xe5, 0x8f,
-	0x25, 0xb6, 0xc0, 0x59, 0xcb, 0xbb, 0x06, 0xf1, 0x77, 0xa8, 0xf8, 0x01, 0x08, 0x51, 0x52, 0x52,
-	0xf2, 0x0b, 0x22, 0xa0, 0xa4, 0xa4, 0xa2, 0xe4, 0xed, 0xb3, 0x9d, 0x84, 0x06, 0xa5, 0xa0, 0x58,
-	0x69, 0x66, 0xdf, 0xcc, 0xbc, 0xf1, 0xca, 0xc4, 0x53, 0x3a, 0x4e, 0x5f, 0x06, 0x55, 0x2d, 0xb5,
-	0xa4, 0xb6, 0xac, 0x94, 0x10, 0x97, 0x93, 0x65, 0xa1, 0xf3, 0x26, 0x09, 0x52, 0x59, 0x4e, 0x97,
-	0x72, 0x29, 0xa7, 0x38, 0x4d, 0x9a, 0x17, 0xc8, 0x90, 0x20, 0x6a, 0x5d, 0x97, 0x77, 0x77, 0xe4,
-	0x18, 0xb0, 0xd5, 0x23, 0x6d, 0x0d, 0x08, 0x3b, 0xc7, 0x6c, 0x2f, 0x87, 0x7e, 0x5b, 0x09, 0x35,
-	0xd5, 0x45, 0x29, 0xa0, 0x63, 0x59, 0xb5, 0x5e, 0xf6, 0xd1, 0x22, 0xc3, 0x30, 0x56, 0xba, 0x90,
-	0xab, 0x85, 0x8e, 0xb5, 0xa0, 0x27, 0xe4, 0xa0, 0xc8, 0x7c, 0xeb, 0xba, 0x75, 0xdb, 0xe5, 0x80,
-	0xe8, 0x03, 0xe2, 0xa5, 0x8d, 0xd2, 0xb2, 0x14, 0x75, 0x04, 0x83, 0x03, 0x33, 0x08, 0xcf, 0x7f,
-	0xad, 0xc7, 0x67, 0x59, 0x32, 0x63, 0x3b, 0x23, 0xc6, 0x49, 0xcf, 0x9e, 0x64, 0xf4, 0x82, 0x38,
-	0xb0, 0x46, 0x37, 0xca, 0x3f, 0xc4, 0xa8, 0x8e, 0xd1, 0x47, 0xc4, 0x7d, 0x05, 0xeb, 0x22, 0xa8,
-	0xb5, 0xf2, 0x8f, 0x60, 0xe4, 0xdd, 0xbb, 0x08, 0xda, 0x8f, 0xc1, 0x82, 0xc1, 0xb3, 0xbe, 0x60,
-	0x48, 0x61, 0xc9, 0x89, 0x59, 0xb2, 0x31, 0x30, 0x3e, 0x30, 0x78, 0x61, 0xe0, 0x87, 0x43, 0x62,
-	0x2f, 0xcc, 0x63, 0xff, 0xaf, 0xc6, 0x77, 0xc8, 0x71, 0xa3, 0x5a, 0x8b, 0xa9, 0x6c, 0x87, 0x67,
-	0x60, 0x19, 0x1a, 0x4b, 0x77, 0xcd, 0xb8, 0x63, 0x10, 0x48, 0x6f, 0x11, 0xe7, 0x75, 0x95, 0x1a,
-	0xe5, 0x11, 0x86, 0x9f, 0x82, 0xd2, 0x33, 0xca, 0xf6, 0x96, 0x71, 0x1b, 0x00, 0xe8, 0xce, 0x89,
-	0x6d, 0x3e, 0x5b, 0xf8, 0x36, 0x96, 0x6b, 0x09, 0xbd, 0x41, 0x06, 0x55, 0xac, 0xd4, 0x1b, 0x59,
-	0x67, 0xbe, 0x83, 0x7e, 0xfb, 0xe7, 0x7a, 0x6c, 0x4d, 0xf8, 0xe6, 0x9a, 0x3e, 0x24, 0x57, 0x7a,
-	0x1c, 0xe5, 0xb1, 0xca, 0xfd, 0x63, 0xd4, 0x5d, 0x43, 0x1d, 0x2c, 0xa3, 0x66, 0xd9, 0x5f, 0x0a,
-	0xc6, 0x87, 0x3d, 0x7f, 0x0c, 0x94, 0x3e, 0x25, 0x24, 0xad, 0x05, 0xac, 0xcb, 0xa2, 0x58, 0xfb,
-	0x83, 0x7f, 0x3e, 0xf4, 0x55, 0x48, 0x3c, 0xc5, 0xb7, 0xd9, 0x38, 0x18, 0x77, 0x3b, 0x32, 0xd7,
-	0x26, 0xab, 0xa9, 0xb2, 0x3e, 0xcb, 0xdd, 0x2f, 0x6b, 0xeb, 0x80, 0xac, 0x8e, 0xcc, 0x75, 0x78,
-	0xf3, 0xf7, 0xf7, 0x91, 0xf5, 0xfe, 0xc7, 0xc8, 0xfa, 0x04, 0xe7, 0x0b, 0x9c, 0xaf, 0x70, 0xbe,
-	0xc1, 0xf9, 0xfc, 0x6e, 0x6c, 0x3d, 0x77, 0x54, 0x9a, 0x8b, 0x32, 0x4e, 0x1c, 0xfc, 0x39, 0xef,
-	0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0x1b, 0xc6, 0xb4, 0x4e, 0x4f, 0x03, 0x00, 0x00,
+	// 563 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x54, 0x3d, 0x6f, 0x13, 0x41,
+	0x10, 0xd5, 0xc5, 0xb9, 0xf3, 0xdd, 0xda, 0xf9, 0x60, 0x09, 0xd1, 0x29, 0x48, 0x31, 0xac, 0x10,
+	0x02, 0x89, 0xd8, 0x28, 0x88, 0x26, 0x15, 0xb9, 0x06, 0x4c, 0x41, 0xb1, 0xa6, 0xa2, 0xb1, 0xd6,
+	0x77, 0x8b, 0x6d, 0xe1, 0xf3, 0x9e, 0x6e, 0xf7, 0x02, 0xfc, 0x1d, 0x68, 0xf8, 0x01, 0x14, 0x94,
+	0x94, 0x94, 0xfc, 0x82, 0x08, 0x90, 0x68, 0x28, 0xa9, 0x28, 0x99, 0xfd, 0x38, 0xdb, 0x20, 0x81,
+	0x22, 0x48, 0xb1, 0xd2, 0xbc, 0x99, 0x79, 0xf3, 0x66, 0xee, 0x25, 0x46, 0x2d, 0xa9, 0x58, 0xfa,
+	0xac, 0x5b, 0x94, 0x42, 0x09, 0xec, 0x8b, 0x42, 0x72, 0xbe, 0x77, 0x30, 0x9e, 0xaa, 0x49, 0x35,
+	0xea, 0xa6, 0x22, 0xef, 0x8d, 0xc5, 0x58, 0xf4, 0x4c, 0x75, 0x54, 0x3d, 0x35, 0xc8, 0x00, 0x13,
+	0x59, 0xd6, 0xde, 0xed, 0x95, 0x76, 0x33, 0x60, 0xd9, 0x6f, 0xa0, 0x25, 0x98, 0xd0, 0x31, 0x8e,
+	0xce, 0xc4, 0x50, 0x2f, 0x0b, 0x2e, 0x7b, 0x6a, 0x9a, 0x73, 0xd8, 0x31, 0x2f, 0x2c, 0x97, 0x7c,
+	0xf5, 0x50, 0x3b, 0x61, 0x52, 0x4d, 0xc5, 0x7c, 0xa0, 0x98, 0xe2, 0x78, 0x13, 0xad, 0x4d, 0xb3,
+	0xd8, 0xbb, 0xe2, 0xdd, 0x88, 0x28, 0x44, 0xf8, 0x2e, 0x6a, 0xa5, 0x95, 0x54, 0x22, 0xe7, 0xe5,
+	0x10, 0x0a, 0x6b, 0xba, 0x90, 0xec, 0x7c, 0x3f, 0xed, 0x6c, 0x67, 0xa3, 0x23, 0xb2, 0x52, 0x22,
+	0x14, 0xd5, 0xa8, 0x9f, 0xe1, 0x5d, 0x14, 0x80, 0x8c, 0xaa, 0x64, 0xdc, 0x30, 0xa3, 0x1c, 0xc2,
+	0xf7, 0x51, 0x34, 0x03, 0xb9, 0x21, 0xac, 0x35, 0x8f, 0xd7, 0xa1, 0xd4, 0x3a, 0xdc, 0xed, 0xda,
+	0x63, 0xcc, 0x82, 0xdd, 0xc7, 0xf5, 0x82, 0x09, 0x06, 0x91, 0x4d, 0x2d, 0xb2, 0x20, 0x10, 0x1a,
+	0xea, 0x78, 0x00, 0xa1, 0x16, 0x28, 0xf9, 0x18, 0xd6, 0x8e, 0x7d, 0x2b, 0x60, 0x11, 0xbe, 0x84,
+	0x82, 0x93, 0x22, 0xd5, 0xab, 0x06, 0x26, 0xef, 0x03, 0xea, 0x67, 0xe4, 0x6d, 0x03, 0xf9, 0x03,
+	0xed, 0xcd, 0x79, 0x1d, 0x78, 0x13, 0x35, 0x2b, 0x69, 0x29, 0xfa, 0x42, 0x3f, 0xd9, 0x06, 0x4a,
+	0x5b, 0x53, 0x5c, 0x9a, 0xd0, 0x40, 0x47, 0xd0, 0x7a, 0x7d, 0xb1, 0xd2, 0xba, 0x19, 0xbe, 0x05,
+	0x9d, 0x2d, 0xdd, 0x69, 0xb3, 0xc4, 0xed, 0x88, 0x77, 0x90, 0xaf, 0xbf, 0x12, 0x77, 0x17, 0x59,
+	0x80, 0xaf, 0xa2, 0xb0, 0x60, 0x52, 0x3e, 0x17, 0xa5, 0x3b, 0x29, 0xf1, 0xbf, 0x9d, 0x76, 0xbc,
+	0x03, 0xba, 0x48, 0xe3, 0x7b, 0x68, 0xa3, 0x8e, 0x87, 0x13, 0x26, 0x27, 0x71, 0xd3, 0xf4, 0x5d,
+	0x36, 0x7d, 0x20, 0x86, 0xb5, 0xd8, 0x2f, 0x1d, 0x84, 0xb6, 0x6b, 0xfc, 0x00, 0x20, 0x7e, 0x88,
+	0x50, 0x5a, 0x72, 0x90, 0xcb, 0x86, 0x4c, 0xc5, 0xe1, 0x5f, 0x7d, 0xb9, 0x08, 0x13, 0xb7, 0xcc,
+	0xb7, 0x59, 0x30, 0x08, 0x8d, 0x1c, 0x38, 0x56, 0x7a, 0x56, 0x55, 0x64, 0xf5, 0xac, 0xe8, 0x6c,
+	0xb3, 0x96, 0x0c, 0x98, 0xe5, 0xc0, 0xb1, 0x22, 0xaf, 0x1b, 0x28, 0xa2, 0x62, 0xc6, 0xad, 0x75,
+	0x60, 0x15, 0x7f, 0xa1, 0x78, 0x39, 0x67, 0xb3, 0x61, 0xed, 0xe1, 0xd2, 0xaa, 0x95, 0x12, 0x58,
+	0x55, 0xa3, 0xfe, 0x3f, 0x3b, 0x7c, 0x0b, 0x85, 0xe6, 0xbf, 0xb9, 0xb6, 0x38, 0x4a, 0x2e, 0x00,
+	0x67, 0x43, 0x73, 0xea, 0x3c, 0xa1, 0x4d, 0x13, 0x42, 0xf7, 0x21, 0x42, 0x36, 0x3b, 0x67, 0x39,
+	0x77, 0x46, 0x2f, 0xae, 0x5b, 0x56, 0xe0, 0x3a, 0x03, 0x1e, 0x41, 0xfc, 0xc7, 0xbf, 0x61, 0xc8,
+	0xb3, 0x54, 0x4d, 0x4f, 0xb8, 0x31, 0x3c, 0xa4, 0x0e, 0xfd, 0xe6, 0x52, 0xf3, 0x1c, 0x5d, 0x0a,
+	0xff, 0xc7, 0xa5, 0xe4, 0xda, 0x8f, 0xcf, 0xfb, 0xde, 0x9b, 0x2f, 0xfb, 0xde, 0x3b, 0x78, 0x1f,
+	0xe0, 0x7d, 0x84, 0xf7, 0x09, 0xde, 0xfb, 0x57, 0x1d, 0xef, 0x49, 0x20, 0xd3, 0x09, 0xcf, 0xd9,
+	0x28, 0x30, 0xbf, 0x38, 0x77, 0x7e, 0x06, 0x00, 0x00, 0xff, 0xff, 0x87, 0x7e, 0x9d, 0xd2, 0x24,
+	0x05, 0x00, 0x00,
 }
