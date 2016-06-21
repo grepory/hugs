@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/opsee/hugs/config"
-	"github.com/opsee/hugs/sqsconsumer"
+	"github.com/opsee/hugs/consumer/nsq"
 	"github.com/opsee/hugs/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/yeller/yeller-golang"
@@ -17,9 +17,13 @@ func main() {
 	}()
 
 	// worker's Id, error threshold prior to idle
-	worker, err := sqsconsumer.NewWorker(util.RandomString(5), 12, config.GetConfig().SqsUrl)
+	worker, err := nsq.NewWorker(util.RandomString(5))
 	if err != nil {
 		log.Fatal(err)
 	}
-	worker.Start()
+
+	err = worker.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

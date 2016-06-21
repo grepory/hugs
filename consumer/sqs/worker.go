@@ -1,4 +1,4 @@
-package sqsconsumer
+package sqs
 
 import (
 	//"encoding/json"
@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/config"
+	"github.com/opsee/hugs/consumer"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/store"
 	log "github.com/sirupsen/logrus"
@@ -165,7 +166,7 @@ func (w *Worker) Work() {
 				log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 			}
 		} else {
-			event := buildEvent(notifications[0], result)
+			event := consumer.BuildEvent(notifications[0], result)
 
 			var msg string
 			if event.Result.Passing {

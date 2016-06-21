@@ -1,4 +1,4 @@
-package sqsconsumer
+package consumer
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/config"
@@ -14,7 +15,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func buildEvent(n *obj.Notification, result *schema.CheckResult) *obj.Event {
+var (
+	httpClient = &http.Client{
+		Timeout: 15 * time.Second,
+	}
+)
+
+func BuildEvent(n *obj.Notification, result *schema.CheckResult) *obj.Event {
 	log.WithFields(log.Fields{"notification": n}).Info("Building event.")
 
 	event := &obj.Event{

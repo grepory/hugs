@@ -120,6 +120,12 @@
 			"revisionTime": "2016-03-22T11:45:00+02:00"
 		},
 		{
+			"checksumSHA1": "4hsVCH+saZnuGKhtI3ajrWuyXow=",
+			"path": "github.com/gogo/protobuf/jsonpb",
+			"revision": "c18eea6ad611eecf94a9ba38471f59706199409e",
+			"revisionTime": "2016-05-11T11:34:45+02:00"
+		},
+		{
 			"path": "github.com/gogo/protobuf/proto",
 			"revision": "4168943e65a2802828518e95310aeeed6d84c4e5",
 			"revisionTime": "2016-03-22T11:45:00+02:00"
@@ -236,9 +242,27 @@
 			"revisionTime": "2016-01-14T16:24:13+01:00"
 		},
 		{
+			"checksumSHA1": "IwuaGWkq9sh9hzmmgkyHvCEMGzM=",
+			"path": "github.com/mreiferson/go-snappystream",
+			"revision": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504",
+			"revisionTime": "2015-04-16T16:44:20-07:00"
+		},
+		{
+			"checksumSHA1": "5mGTJWVBk+2KdbBQoJWMtGoJJgU=",
+			"path": "github.com/mreiferson/go-snappystream/snappy-go",
+			"revision": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504",
+			"revisionTime": "2015-04-16T16:44:20-07:00"
+		},
+		{
 			"path": "github.com/nlopes/slack",
 			"revision": "7530ef00e32bc4b6fe93b49551b0bf457427c289",
 			"revisionTime": "2016-04-17T21:21:03+01:00"
+		},
+		{
+			"checksumSHA1": "yujmpVvIXpf6DEsVy5BJr2nCtp8=",
+			"path": "github.com/nsqio/go-nsq",
+			"revision": "0b80d6f05e15ca1930e0c5e1d540ed627e299980",
+			"revisionTime": "2016-02-21T09:07:15-08:00"
 		},
 		{
 			"checksumSHA1": "nTVtRzu/GvOqPdU31vHsipP4Lk0=",
@@ -373,6 +397,12 @@
 			"path": "golang.org/x/net/websocket",
 			"revision": "35b06af0720201bc2f326773a80767387544f8c4",
 			"revisionTime": "2016-03-15T14:00:09+11:00"
+		},
+		{
+			"checksumSHA1": "oBKY8LJtCoSvmYA4ADFDY02A8NY=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "d4feaf1a7e61e1d9e79e6c4e76c6349e9cab0a03",
+			"revisionTime": "2016-05-16T08:31:02-04:00"
 		},
 		{
 			"path": "google.golang.org/grpc",
