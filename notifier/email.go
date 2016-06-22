@@ -95,6 +95,15 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		templateContent["rds_db_name"] = result.Target.Id
 	}
 
+	// use different template for external hosts
+	if result.Target.Type == "external_host" {
+		if result.Passing {
+			templateName = "check-pass-url"
+		} else {
+			templateName = "check-fail-url"
+		}
+	}
+
 	mergeVars := templateContent
 	mergeVars["opsee_host"] = es.opseeHost
 	message := &mandrill.Message{}
