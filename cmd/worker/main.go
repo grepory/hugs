@@ -1,6 +1,10 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/consumer/nsq"
 	"github.com/opsee/hugs/util"
@@ -26,4 +30,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	<-sigChan
 }
