@@ -3,8 +3,8 @@ package obj
 import (
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/util"
+	log "github.com/opsee/logrus"
 	opsee_types "github.com/opsee/protobuf/opseeproto/types"
-	log "github.com/sirupsen/logrus"
 )
 
 type NocapResponse struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 type Validatable interface {

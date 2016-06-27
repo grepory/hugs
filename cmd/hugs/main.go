@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/service"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 	"github.com/yeller/yeller-golang"
 )
 

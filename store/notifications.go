@@ -6,7 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 func (pg *Postgres) GetNotifications(user *schema.User, oldNotifications []*obj.Notification) ([]*obj.Notification, error) {

@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 func TestGetConfig(t *testing.T) {

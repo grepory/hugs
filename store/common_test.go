@@ -3,7 +3,7 @@ package store
 import (
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 type StoreTest struct {

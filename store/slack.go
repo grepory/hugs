@@ -3,10 +3,10 @@ package store
 import (
 	"encoding/json"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/jmoiron/sqlx/types"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
+	log "github.com/opsee/logrus"
 )
 
 func (pg *Postgres) DeleteSlackOAuthResponsesByUser(user *schema.User) error {

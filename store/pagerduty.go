@@ -3,7 +3,7 @@ package store
 import (
 	"encoding/json"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 
 	"github.com/jmoiron/sqlx/types"
 	"github.com/opsee/basic/schema"
