@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // the permission which corresponds to opsee administrator
@@ -62,23 +60,6 @@ func (p *PermissionsBitmap) Register(i int, name string) {
 	defer p.Unlock()
 	p.bitmap[i] = name
 	p.inverted[name] = i
-}
-
-type BitFlags interface {
-	// Set bit to 1 at index i
-	Set(int)
-
-	// Set bit to 0 at index i
-	Clear(int)
-
-	// should return false if outside of bit range
-	Test(int) bool
-
-	// return dank bits
-	HighBits() []int
-
-	// returns flag descriptor associated with bit
-	Bit(string) int
 }
 
 // Returns new permissions with mapping of bit to perms in order
@@ -138,7 +119,6 @@ func (p *Permission) Permissions() []string {
 func (p *Permission) SetPermission(perm string) bool {
 	reg, rok := PermissionsRegistry.Get(p.Name)
 	if !rok {
-		log.Error("Can't get perms registry")
 		return false
 	}
 	if i, ok := reg.Bit(perm); ok {
@@ -162,7 +142,6 @@ func (p *Permission) SetPermissions(perms ...string) (failed []string) {
 func (p *Permission) ClearPermission(perm string) bool {
 	reg, rok := PermissionsRegistry.Get(p.Name)
 	if !rok {
-		log.Error("Can't get perms registry")
 		return false
 	}
 	if i, ok := reg.Bit(perm); ok {

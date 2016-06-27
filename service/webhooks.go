@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/obj"
+	log "github.com/opsee/logrus"
 	"golang.org/x/net/context"
 )
 

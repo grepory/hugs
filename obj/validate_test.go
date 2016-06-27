@@ -3,7 +3,7 @@ package obj
 import (
 	"testing"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 func TestValidatorIsValid(t *testing.T) {

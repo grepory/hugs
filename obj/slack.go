@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx/types"
 	"github.com/nlopes/slack"
 	"github.com/opsee/hugs/util"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 // helper message to escape

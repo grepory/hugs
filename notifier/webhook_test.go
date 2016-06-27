@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/opsee/hugs/obj"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 func webhooktest(rw http.ResponseWriter, req *http.Request) {

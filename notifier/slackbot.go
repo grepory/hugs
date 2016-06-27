@@ -10,8 +10,8 @@ import (
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
+	log "github.com/opsee/logrus"
 	slacktmpl "github.com/opsee/notification-templates/dist/go/slack"
-	log "github.com/sirupsen/logrus"
 )
 
 type SlackBotSender struct {
