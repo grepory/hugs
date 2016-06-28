@@ -102,6 +102,8 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		} else {
 			templateName = "check-fail-url"
 		}
+
+		templateContent["instance_count"] = 6
 	}
 
 	mergeVars := templateContent
