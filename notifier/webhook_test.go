@@ -9,6 +9,12 @@ import (
 	log "github.com/opsee/logrus"
 )
 
+type testResultCache struct{}
+
+func (tr testResultCache) Results(checkId string) (*ResultCacheItem, error) {
+	return &ResultCacheItem{}, nil
+}
+
 func webhooktest(rw http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -35,7 +41,7 @@ func TestWebHookNotifier(t *testing.T) {
 	}
 	event := obj.GenerateTestEvent()
 
-	webhookSender, err := NewWebHookSender()
+	webhookSender, err := NewWebHookSender(testResultCache{})
 	if err != nil {
 		log.Error(err)
 		t.FailNow()

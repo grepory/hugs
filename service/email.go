@@ -21,7 +21,7 @@ func (s *Service) postEmailTest() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		emailSender, err := notifier.NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey)
+		emailSender, err := notifier.NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey, testResultCache{})
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postEmailTest"}).Error("Couldn't get email sender.")
 			return ctx, http.StatusBadRequest, errUnknown

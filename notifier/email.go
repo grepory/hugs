@@ -4,21 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/keighl/mandrill"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
-	"github.com/opsee/pracovnik/results"
 	log "github.com/sirupsen/logrus"
 )
 
 type EmailSender struct {
 	opseeHost   string
 	mailClient  *mandrill.Client
-	resultStore results.Store
+	resultCache ResultCache
 }
 
 func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
@@ -28,10 +24,15 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		responses    []*schema.CheckResponse
 	)
 
+	results, err := es.resultCache.Results(result.CheckId)
+	if err != nil {
+		return err
+	}
+
 	if result.Passing {
-		responses = result.Responses
+		responses = results.PassingResponses
 	} else {
-		responses = result.FailingResponses()
+		responses = results.FailingResponses
 	}
 
 	log.WithFields(log.Fields{"responses": responses}).Info("Got responses.")
@@ -41,15 +42,11 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	// CheckResponse objects contained within the CheckResult. We cannot know _why_
 	// these CheckResponse objects aren't failing. Because we cannot ordain the reason
 	// for this error state, let us first err on the side of not bugging a customer.
-	if len(responses) < 1 && !result.Passing {
-		return errors.New("Received failing CheckResult with no failing responses.")
+	if len(responses) < 1 {
+		return errors.New("Received check event with no responses.")
 	}
 
-	instances := []*schema.Target{}
-	for _, resp := range responses {
-		instances = append(instances, resp.Target)
-	}
-	log.WithFields(log.Fields{"instances": instances}).Info("Got instances.")
+	log.WithFields(log.Fields{"instances": results.Targets}).Info("Got instances.")
 
 	responseJson, err := json.MarshalIndent(responses[0], "", "  ")
 	if err != nil {
@@ -62,9 +59,9 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		"group_id":       result.Target.Id,
 		"group_name":     result.Target.Id,
 		"first_response": string(responseJson),
-		"instance_count": len(result.Responses),
-		"instances":      instances,
-		"fail_count":     result.FailingCount(),
+		"instance_count": len(results.Targets),
+		"instances":      results.Targets,
+		"fail_count":     len(results.FailingResponses),
 		"opsee_host":     config.GetConfig().OpseeHost,
 	}
 	log.WithFields(log.Fields{"template_content": templateContent}).Info("Build template content")
@@ -107,28 +104,6 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		} else {
 			templateName = "check-fail-url"
 		}
-
-		results, err := es.resultStore.GetResultsByCheckId(result.CheckId)
-		if err != nil {
-			return err
-		}
-
-		var (
-			instanceCount = len(results)
-			failCount     int
-		)
-
-		for _, r := range results {
-			failCount += r.FailingCount()
-		}
-
-		// we have inconsistent results, so don't do anything
-		if !result.Passing && failCount == 0 {
-			return nil
-		}
-
-		templateContent["instance_count"] = instanceCount
-		templateContent["fail_count"] = failCount
 	}
 
 	mergeVars := templateContent
@@ -145,10 +120,10 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	return err
 }
 
-func NewEmailSender(host string, mandrillKey string) (*EmailSender, error) {
+func NewEmailSender(host, mandrillKey string, resultCache ResultCache) (*EmailSender, error) {
 	return &EmailSender{
 		opseeHost:   host,
 		mailClient:  mandrill.ClientWithKey(mandrillKey),
-		resultStore: &results.DynamoStore{dynamodb.New(session.New(&aws.Config{Region: aws.String("us-west-2")}))},
+		resultCache: resultCache,
 	}, nil
 }

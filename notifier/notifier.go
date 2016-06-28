@@ -20,13 +20,15 @@ type Notifier struct {
 
 // A collection of Senders, utilized by Workers to send notifications, return map of sender initialization errors to Warn on
 func NewNotifier() (*Notifier, map[string]error) {
+	resultCache := NewResultCache()
+
 	errMap := make(map[string]error)
 	notifier := &Notifier{
 		Senders: map[string]Sender{},
 	}
 
 	// try add slack webhook sender
-	webHookSender, err := NewWebHookSender()
+	webHookSender, err := NewWebHookSender(resultCache)
 	if err != nil {
 		errMap["webhook"] = err
 	} else {
@@ -34,7 +36,7 @@ func NewNotifier() (*Notifier, map[string]error) {
 	}
 
 	// try add slack bot sender
-	slackBotSender, err := NewSlackBotSender()
+	slackBotSender, err := NewSlackBotSender(resultCache)
 	if err != nil {
 		errMap["slackbot"] = err
 	} else {
@@ -42,7 +44,7 @@ func NewNotifier() (*Notifier, map[string]error) {
 	}
 
 	// try add pagerduty sender
-	emailSender, err := NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey)
+	emailSender, err := NewEmailSender(config.GetConfig().OpseeHost, config.GetConfig().MandrillApiKey, resultCache)
 	if err != nil {
 		errMap["email"] = err
 	} else {
@@ -50,7 +52,7 @@ func NewNotifier() (*Notifier, map[string]error) {
 	}
 
 	// try add pagerduty sender
-	pagerDutySender, err := NewPagerDutySender()
+	pagerDutySender, err := NewPagerDutySender(resultCache)
 	if err != nil {
 		errMap["pagerduty"] = err
 	} else {

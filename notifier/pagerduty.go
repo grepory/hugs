@@ -15,12 +15,17 @@ import (
 )
 
 type PagerDutySender struct {
-	templates map[string]*mustache.Template
+	templates   map[string]*mustache.Template
+	resultCache ResultCache
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
 func (this PagerDutySender) Send(n *obj.Notification, e *obj.Event) error {
 	result := e.Result
+	results, err := this.resultCache.Results(result.CheckId)
+	if err != nil {
+		return err
+	}
 
 	templateKey := "check-passing"
 	eventType := "resolve"
@@ -29,7 +34,7 @@ func (this PagerDutySender) Send(n *obj.Notification, e *obj.Event) error {
 		templateKey = "check-failing"
 	}
 
-	failingResponses := result.FailingResponses()
+	failingResponses := results.FailingResponses
 
 	if len(failingResponses) < 1 && !result.Passing {
 		return errors.New("Received failing CheckResult with no failing responses.")
@@ -110,7 +115,7 @@ func (this PagerDutySender) getPagerDutyServiceKey(n *obj.Notification) (string,
 	return oaResponse.ServiceKey, nil
 }
 
-func NewPagerDutySender() (*PagerDutySender, error) {
+func NewPagerDutySender(resultCache ResultCache) (*PagerDutySender, error) {
 	// initialize check failing template
 	failTemplate, err := mustache.ParseString(pdtmpl.CheckFailing)
 	if err != nil {
@@ -129,6 +134,7 @@ func NewPagerDutySender() (*PagerDutySender, error) {
 	}
 
 	return &PagerDutySender{
-		templates: templateMap,
+		templates:   templateMap,
+		resultCache: resultCache,
 	}, nil
 }
