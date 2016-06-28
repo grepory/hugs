@@ -4,16 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/keighl/mandrill"
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
-	log "github.com/opsee/logrus"
+	"github.com/opsee/pracovnik/results"
+	log "github.com/sirupsen/logrus"
 )
 
 type EmailSender struct {
-	opseeHost  string
-	mailClient *mandrill.Client
+	opseeHost   string
+	mailClient  *mandrill.Client
+	resultStore results.Store
 }
 
 func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
@@ -103,7 +108,27 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 			templateName = "check-fail-url"
 		}
 
-		templateContent["instance_count"] = 6
+		results, err := es.resultStore.GetResultsByCheckId(result.CheckId)
+		if err != nil {
+			return err
+		}
+
+		var (
+			instanceCount = len(results)
+			failCount     int
+		)
+
+		for _, r := range results {
+			failCount += r.FailingCount()
+		}
+
+		// we have inconsistent results, so don't do anything
+		if !result.Passing && failCount == 0 {
+			return nil
+		}
+
+		templateContent["instance_count"] = instanceCount
+		templateContent["fail_count"] = failCount
 	}
 
 	mergeVars := templateContent
@@ -122,7 +147,8 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 
 func NewEmailSender(host string, mandrillKey string) (*EmailSender, error) {
 	return &EmailSender{
-		opseeHost:  host,
-		mailClient: mandrill.ClientWithKey(mandrillKey),
+		opseeHost:   host,
+		mailClient:  mandrill.ClientWithKey(mandrillKey),
+		resultStore: &results.DynamoStore{dynamodb.New(session.New(&aws.Config{Region: aws.String("us-west-2")}))},
 	}, nil
 }

@@ -12,6 +12,8 @@ import _ "github.com/opsee/protobuf/opseeproto"
 import opsee_types3 "github.com/opsee/protobuf/opseeproto/types"
 import opsee_types "github.com/opsee/protobuf/opseeproto/types"
 
+import database_sql_driver "database/sql/driver"
+
 import github_com_graphql_go_graphql "github.com/graphql-go/graphql"
 import github_com_opsee_protobuf_plugin_graphql_scalars "github.com/opsee/protobuf/plugin/graphql/scalars"
 
@@ -22,26 +24,39 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+type UserFlags struct {
+	Admin   bool `protobuf:"varint,1,opt,name=admin,proto3" json:"admin,omitempty"`
+	Edit    bool `protobuf:"varint,2,opt,name=edit,proto3" json:"edit,omitempty"`
+	Billing bool `protobuf:"varint,3,opt,name=billing,proto3" json:"billing,omitempty"`
+}
+
+func (m *UserFlags) Reset()                    { *m = UserFlags{} }
+func (m *UserFlags) String() string            { return proto.CompactTextString(m) }
+func (*UserFlags) ProtoMessage()               {}
+func (*UserFlags) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{0} }
+
 type User struct {
 	Id           int32                    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty" token:"id"`
 	CustomerId   string                   `protobuf:"bytes,2,opt,name=customer_id,json=customerId,proto3" json:"customer_id,omitempty" token:"customer_id" db:"customer_id"`
 	Email        string                   `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty" token:"email"`
 	Name         string                   `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" token:"name"`
-	Verified     bool                     `protobuf:"varint,5,opt,name=verified,proto3" json:"verified,omitempty" token:"verified"`
-	Admin        bool                     `protobuf:"varint,6,opt,name=admin,proto3" json:"admin,omitempty" token:"admin"`
-	Active       bool                     `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" token:"active"`
+	Verified     bool                     `protobuf:"varint,5,opt,name=verified,proto3" json:"verified" token:"verified"`
+	Admin        bool                     `protobuf:"varint,6,opt,name=admin,proto3" json:"admin" token:"admin"`
+	Active       bool                     `protobuf:"varint,7,opt,name=active,proto3" json:"active" token:"active"`
 	AdminId      int32                    `protobuf:"varint,8,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty" token:"admin_id"`
 	PasswordHash string                   `protobuf:"bytes,9,opt,name=password_hash,json=passwordHash,proto3" json:"-" db:"password_hash"`
 	CreatedAt    *opsee_types.Timestamp   `protobuf:"bytes,10,opt,name=created_at,json=createdAt" json:"created_at,omitempty" db:"created_at"`
 	UpdatedAt    *opsee_types.Timestamp   `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt" json:"updated_at,omitempty" db:"updated_at"`
 	Status       string                   `protobuf:"bytes,12,opt,name=status,proto3" json:"status,omitempty" token:"status" db:"status"`
-	Perms        *opsee_types3.Permission `protobuf:"bytes,13,opt,name=perms" json:"perms,omitempty" db:"perms"`
+	OldPerms     *opsee_types3.Permission `protobuf:"bytes,13,opt,name=old_perms,json=oldPerms" json:"old_perms,omitempty"`
+	HasPassword  bool                     `protobuf:"varint,14,opt,name=has_password,json=hasPassword,proto3" json:"has_password"`
+	Perms        *UserFlags               `protobuf:"bytes,15,opt,name=perms" json:"perms,omitempty" db:"perms" token:"perms"`
 }
 
 func (m *User) Reset()                    { *m = User{} }
 func (m *User) String() string            { return proto.CompactTextString(m) }
 func (*User) ProtoMessage()               {}
-func (*User) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{0} }
+func (*User) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{1} }
 
 func (m *User) GetCreatedAt() *opsee_types.Timestamp {
 	if m != nil {
@@ -57,7 +72,14 @@ func (m *User) GetUpdatedAt() *opsee_types.Timestamp {
 	return nil
 }
 
-func (m *User) GetPerms() *opsee_types3.Permission {
+func (m *User) GetOldPerms() *opsee_types3.Permission {
+	if m != nil {
+		return m.OldPerms
+	}
+	return nil
+}
+
+func (m *User) GetPerms() *UserFlags {
 	if m != nil {
 		return m.Perms
 	}
@@ -76,7 +98,7 @@ type Customer struct {
 func (m *Customer) Reset()                    { *m = Customer{} }
 func (m *Customer) String() string            { return proto.CompactTextString(m) }
 func (*Customer) ProtoMessage()               {}
-func (*Customer) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{1} }
+func (*Customer) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{2} }
 
 func (m *Customer) GetCreatedAt() *opsee_types.Timestamp {
 	if m != nil {
@@ -118,7 +140,7 @@ type Team struct {
 func (m *Team) Reset()                    { *m = Team{} }
 func (m *Team) String() string            { return proto.CompactTextString(m) }
 func (*Team) ProtoMessage()               {}
-func (*Team) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{2} }
+func (*Team) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{3} }
 
 func (m *Team) GetCreditCardInfo() *CreditCardInfo {
 	if m != nil {
@@ -150,7 +172,7 @@ type Invoice struct {
 func (m *Invoice) Reset()                    { *m = Invoice{} }
 func (m *Invoice) String() string            { return proto.CompactTextString(m) }
 func (*Invoice) ProtoMessage()               {}
-func (*Invoice) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{3} }
+func (*Invoice) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{4} }
 
 func (m *Invoice) GetDate() *opsee_types.Timestamp {
 	if m != nil {
@@ -170,22 +192,30 @@ type CreditCardInfo struct {
 func (m *CreditCardInfo) Reset()                    { *m = CreditCardInfo{} }
 func (m *CreditCardInfo) String() string            { return proto.CompactTextString(m) }
 func (*CreditCardInfo) ProtoMessage()               {}
-func (*CreditCardInfo) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{4} }
+func (*CreditCardInfo) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{5} }
 
 type Invite struct {
 	Id         int32                    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Email      string                   `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	Name       string                   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	CustomerId string                   `protobuf:"bytes,7,opt,name=customer_id,json=customerId,proto3" json:"customer_id,omitempty"`
-	Perms      *opsee_types3.Permission `protobuf:"bytes,8,opt,name=perms" json:"perms,omitempty"`
+	CustomerId string                   `protobuf:"bytes,4,opt,name=customer_id,json=customerId,proto3" json:"customer_id,omitempty"`
+	OldPerms   *opsee_types3.Permission `protobuf:"bytes,5,opt,name=old_perms,json=oldPerms" json:"old_perms,omitempty"`
+	Perms      *UserFlags               `protobuf:"bytes,6,opt,name=perms" json:"perms,omitempty"`
 }
 
 func (m *Invite) Reset()                    { *m = Invite{} }
 func (m *Invite) String() string            { return proto.CompactTextString(m) }
 func (*Invite) ProtoMessage()               {}
-func (*Invite) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{5} }
+func (*Invite) Descriptor() ([]byte, []int) { return fileDescriptorUser, []int{6} }
 
-func (m *Invite) GetPerms() *opsee_types3.Permission {
+func (m *Invite) GetOldPerms() *opsee_types3.Permission {
+	if m != nil {
+		return m.OldPerms
+	}
+	return nil
+}
+
+func (m *Invite) GetPerms() *UserFlags {
 	if m != nil {
 		return m.Perms
 	}
@@ -193,12 +223,196 @@ func (m *Invite) GetPerms() *opsee_types3.Permission {
 }
 
 func init() {
+	proto.RegisterType((*UserFlags)(nil), "opsee.UserFlags")
 	proto.RegisterType((*User)(nil), "opsee.User")
 	proto.RegisterType((*Customer)(nil), "opsee.Customer")
 	proto.RegisterType((*Team)(nil), "opsee.Team")
 	proto.RegisterType((*Invoice)(nil), "opsee.Invoice")
 	proto.RegisterType((*CreditCardInfo)(nil), "opsee.CreditCardInfo")
 	proto.RegisterType((*Invite)(nil), "opsee.Invite")
+}
+func (this *UserFlags) UInt64() uint64 {
+	b := uint64(0)
+	if this.Admin {
+		b |= uint64(1) << uint64(0)
+	}
+	if this.Edit {
+		b |= uint64(1) << uint64(1)
+	}
+	if this.Billing {
+		b |= uint64(1) << uint64(2)
+	}
+
+	return b
+}
+func (this *UserFlags) HighFlags() []string {
+	var b []string
+	if this.Admin {
+		b = append(b, "admin")
+	}
+	if this.Edit {
+		b = append(b, "edit")
+	}
+	if this.Billing {
+		b = append(b, "billing")
+	}
+	return b
+}
+
+func (this *UserFlags) LowFlags() []string {
+	var b []string
+	if !this.Admin {
+		b = append(b, "admin")
+	}
+	if !this.Edit {
+		b = append(b, "edit")
+	}
+	if !this.Billing {
+		b = append(b, "billing")
+	}
+	return b
+}
+
+func (this *UserFlags) SetFlag(flag string) error {
+	switch flag {
+	case "admin":
+		this.Admin = true
+	case "edit":
+		this.Edit = true
+	case "billing":
+		this.Billing = true
+	default:
+		return fmt.Errorf("invalid flag: %v", flag)
+	}
+	return nil
+}
+func (this *UserFlags) ClearFlag(flag string) error {
+	switch flag {
+	case "admin":
+		this.Admin = false
+	case "edit":
+		this.Edit = false
+	case "billing":
+		this.Billing = false
+	default:
+		return fmt.Errorf("invalid flag: %v", flag)
+	}
+	return nil
+}
+func (this *UserFlags) SetFlags(flags ...string) []error {
+	var errs []error
+	for _, f := range flags {
+		if err := this.SetFlag(f); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+func (this *UserFlags) ClearFlags(flags ...string) []error {
+	var errs []error
+	for _, f := range flags {
+		if err := this.ClearFlag(f); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+func (this *UserFlags) TestFlag(flag string) bool {
+	switch flag {
+	case "admin":
+		return this.Admin
+	case "edit":
+		return this.Edit
+	case "billing":
+		return this.Billing
+	}
+	return false
+}
+func (this *UserFlags) TestFlags(flags ...string) bool {
+	for _, f := range flags {
+		if !this.TestFlag(f) {
+			return false
+		}
+	}
+	return true
+}
+func (this *UserFlags) FromUInt64(b uint64) error {
+	bb := b
+	bb = b
+	if bb&(uint64(1)<<uint(0)) > 0 {
+		this.Admin = true
+	} else {
+		this.Admin = false
+	}
+	bb = b
+	if bb&(uint64(1)<<uint(1)) > 0 {
+		this.Edit = true
+	} else {
+		this.Edit = false
+	}
+	bb = b
+	if bb&(uint64(1)<<uint(2)) > 0 {
+		this.Billing = true
+	} else {
+		this.Billing = false
+	}
+
+	return nil
+}
+func (this *UserFlags) Scan(i interface{}) error {
+	switch v := i.(type) {
+	case int:
+		return this.FromUInt64(uint64(v))
+	case int32:
+		return this.FromUInt64(uint64(v))
+	case int64:
+		return this.FromUInt64(uint64(v))
+	case float32:
+		return this.FromUInt64(uint64(v))
+	case float64:
+		return this.FromUInt64(uint64(v))
+	}
+
+	return fmt.Errorf("invalid type: %T", i)
+}
+func (this *UserFlags) Value() (database_sql_driver.Value, error) {
+	return int64(this.UInt64()), nil
+}
+func (this *UserFlags) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*UserFlags)
+	if !ok {
+		that2, ok := that.(UserFlags)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Admin != that1.Admin {
+		return false
+	}
+	if this.Edit != that1.Edit {
+		return false
+	}
+	if this.Billing != that1.Billing {
+		return false
+	}
+	return true
 }
 func (this *User) Equal(that interface{}) bool {
 	if that == nil {
@@ -259,6 +473,12 @@ func (this *User) Equal(that interface{}) bool {
 		return false
 	}
 	if this.Status != that1.Status {
+		return false
+	}
+	if !this.OldPerms.Equal(that1.OldPerms) {
+		return false
+	}
+	if this.HasPassword != that1.HasPassword {
 		return false
 	}
 	if !this.Perms.Equal(that1.Perms) {
@@ -491,11 +711,20 @@ func (this *Invite) Equal(that interface{}) bool {
 	if this.CustomerId != that1.CustomerId {
 		return false
 	}
+	if !this.OldPerms.Equal(that1.OldPerms) {
+		return false
+	}
 	if !this.Perms.Equal(that1.Perms) {
 		return false
 	}
 	return true
 }
+
+type UserFlagsGetter interface {
+	GetUserFlags() *UserFlags
+}
+
+var GraphQLUserFlagsType *github_com_graphql_go_graphql.Object
 
 type UserGetter interface {
 	GetUser() *User
@@ -534,6 +763,71 @@ type InviteGetter interface {
 var GraphQLInviteType *github_com_graphql_go_graphql.Object
 
 func init() {
+	GraphQLUserFlagsType = github_com_graphql_go_graphql.NewObject(github_com_graphql_go_graphql.ObjectConfig{
+		Name:        "schemaUserFlags",
+		Description: "",
+		Fields: (github_com_graphql_go_graphql.FieldsThunk)(func() github_com_graphql_go_graphql.Fields {
+			return github_com_graphql_go_graphql.Fields{
+				"admin": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.Boolean,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*UserFlags)
+						if ok {
+							return obj.Admin, nil
+						}
+						inter, ok := p.Source.(UserFlagsGetter)
+						if ok {
+							face := inter.GetUserFlags()
+							if face == nil {
+								return nil, nil
+							}
+							return face.Admin, nil
+						}
+						return nil, fmt.Errorf("field admin not resolved")
+					},
+				},
+				"edit": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.Boolean,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*UserFlags)
+						if ok {
+							return obj.Edit, nil
+						}
+						inter, ok := p.Source.(UserFlagsGetter)
+						if ok {
+							face := inter.GetUserFlags()
+							if face == nil {
+								return nil, nil
+							}
+							return face.Edit, nil
+						}
+						return nil, fmt.Errorf("field edit not resolved")
+					},
+				},
+				"billing": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.Boolean,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*UserFlags)
+						if ok {
+							return obj.Billing, nil
+						}
+						inter, ok := p.Source.(UserFlagsGetter)
+						if ok {
+							face := inter.GetUserFlags()
+							if face == nil {
+								return nil, nil
+							}
+							return face.Billing, nil
+						}
+						return nil, fmt.Errorf("field billing not resolved")
+					},
+				},
+			}
+		}),
+	})
 	GraphQLUserType = github_com_graphql_go_graphql.NewObject(github_com_graphql_go_graphql.ObjectConfig{
 		Name:        "schemaUser",
 		Description: "",
@@ -779,8 +1073,52 @@ func init() {
 						return nil, fmt.Errorf("field status not resolved")
 					},
 				},
-				"perms": &github_com_graphql_go_graphql.Field{
+				"old_perms": &github_com_graphql_go_graphql.Field{
 					Type:        github_com_opsee_protobuf_plugin_graphql_scalars.Permission,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*User)
+						if ok {
+							if obj.OldPerms == nil {
+								return nil, nil
+							}
+							return obj.GetOldPerms(), nil
+						}
+						inter, ok := p.Source.(UserGetter)
+						if ok {
+							face := inter.GetUser()
+							if face == nil {
+								return nil, nil
+							}
+							if face.OldPerms == nil {
+								return nil, nil
+							}
+							return face.GetOldPerms(), nil
+						}
+						return nil, fmt.Errorf("field old_perms not resolved")
+					},
+				},
+				"has_password": &github_com_graphql_go_graphql.Field{
+					Type:        github_com_graphql_go_graphql.Boolean,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*User)
+						if ok {
+							return obj.HasPassword, nil
+						}
+						inter, ok := p.Source.(UserGetter)
+						if ok {
+							face := inter.GetUser()
+							if face == nil {
+								return nil, nil
+							}
+							return face.HasPassword, nil
+						}
+						return nil, fmt.Errorf("field has_password not resolved")
+					},
+				},
+				"perms": &github_com_graphql_go_graphql.Field{
+					Type:        GraphQLUserFlagsType,
 					Description: "",
 					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
 						obj, ok := p.Source.(*User)
@@ -1324,8 +1662,33 @@ func init() {
 						return nil, fmt.Errorf("field customer_id not resolved")
 					},
 				},
-				"perms": &github_com_graphql_go_graphql.Field{
+				"old_perms": &github_com_graphql_go_graphql.Field{
 					Type:        github_com_opsee_protobuf_plugin_graphql_scalars.Permission,
+					Description: "",
+					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
+						obj, ok := p.Source.(*Invite)
+						if ok {
+							if obj.OldPerms == nil {
+								return nil, nil
+							}
+							return obj.GetOldPerms(), nil
+						}
+						inter, ok := p.Source.(InviteGetter)
+						if ok {
+							face := inter.GetInvite()
+							if face == nil {
+								return nil, nil
+							}
+							if face.OldPerms == nil {
+								return nil, nil
+							}
+							return face.GetOldPerms(), nil
+						}
+						return nil, fmt.Errorf("field old_perms not resolved")
+					},
+				},
+				"perms": &github_com_graphql_go_graphql.Field{
+					Type:        GraphQLUserFlagsType,
 					Description: "",
 					Resolve: func(p github_com_graphql_go_graphql.ResolveParams) (interface{}, error) {
 						obj, ok := p.Source.(*Invite)
@@ -1353,6 +1716,54 @@ func init() {
 		}),
 	})
 }
+func (m *UserFlags) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *UserFlags) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Admin {
+		data[i] = 0x8
+		i++
+		if m.Admin {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Edit {
+		data[i] = 0x10
+		i++
+		if m.Edit {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Billing {
+		data[i] = 0x18
+		i++
+		if m.Billing {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	return i, nil
+}
+
 func (m *User) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -1458,15 +1869,35 @@ func (m *User) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintUser(data, i, uint64(len(m.Status)))
 		i += copy(data[i:], m.Status)
 	}
-	if m.Perms != nil {
+	if m.OldPerms != nil {
 		data[i] = 0x6a
 		i++
-		i = encodeVarintUser(data, i, uint64(m.Perms.Size()))
-		n3, err := m.Perms.MarshalTo(data[i:])
+		i = encodeVarintUser(data, i, uint64(m.OldPerms.Size()))
+		n3, err := m.OldPerms.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n3
+	}
+	if m.HasPassword {
+		data[i] = 0x70
+		i++
+		if m.HasPassword {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Perms != nil {
+		data[i] = 0x7a
+		i++
+		i = encodeVarintUser(data, i, uint64(m.Perms.Size()))
+		n4, err := m.Perms.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n4
 	}
 	return i, nil
 }
@@ -1502,21 +1933,21 @@ func (m *Customer) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1a
 		i++
 		i = encodeVarintUser(data, i, uint64(m.CreatedAt.Size()))
-		n4, err := m.CreatedAt.MarshalTo(data[i:])
+		n5, err := m.CreatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n4
+		i += n5
 	}
 	if m.UpdatedAt != nil {
 		data[i] = 0x22
 		i++
 		i = encodeVarintUser(data, i, uint64(m.UpdatedAt.Size()))
-		n5, err := m.UpdatedAt.MarshalTo(data[i:])
+		n6, err := m.UpdatedAt.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n5
+		i += n6
 	}
 	if len(m.Users) > 0 {
 		for _, msg := range m.Users {
@@ -1582,11 +2013,11 @@ func (m *Team) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x22
 		i++
 		i = encodeVarintUser(data, i, uint64(m.CreditCardInfo.Size()))
-		n6, err := m.CreditCardInfo.MarshalTo(data[i:])
+		n7, err := m.CreditCardInfo.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n6
+		i += n7
 	}
 	if len(m.Invoices) > 0 {
 		for _, msg := range m.Invoices {
@@ -1634,11 +2065,11 @@ func (m *Invoice) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintUser(data, i, uint64(m.Date.Size()))
-		n7, err := m.Date.MarshalTo(data[i:])
+		n8, err := m.Date.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n7
+		i += n8
 	}
 	if m.Amount != 0 {
 		data[i] = 0x10
@@ -1737,20 +2168,30 @@ func (m *Invite) MarshalTo(data []byte) (int, error) {
 		i += copy(data[i:], m.Name)
 	}
 	if len(m.CustomerId) > 0 {
-		data[i] = 0x3a
+		data[i] = 0x22
 		i++
 		i = encodeVarintUser(data, i, uint64(len(m.CustomerId)))
 		i += copy(data[i:], m.CustomerId)
 	}
-	if m.Perms != nil {
-		data[i] = 0x42
+	if m.OldPerms != nil {
+		data[i] = 0x2a
 		i++
-		i = encodeVarintUser(data, i, uint64(m.Perms.Size()))
-		n8, err := m.Perms.MarshalTo(data[i:])
+		i = encodeVarintUser(data, i, uint64(m.OldPerms.Size()))
+		n9, err := m.OldPerms.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n8
+		i += n9
+	}
+	if m.Perms != nil {
+		data[i] = 0x32
+		i++
+		i = encodeVarintUser(data, i, uint64(m.Perms.Size()))
+		n10, err := m.Perms.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n10
 	}
 	return i, nil
 }
@@ -1782,6 +2223,16 @@ func encodeVarintUser(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	return offset + 1
 }
+func NewPopulatedUserFlags(r randyUser, easy bool) *UserFlags {
+	this := &UserFlags{}
+	this.Admin = bool(bool(r.Intn(2) == 0))
+	this.Edit = bool(bool(r.Intn(2) == 0))
+	this.Billing = bool(bool(r.Intn(2) == 0))
+	if !easy && r.Intn(10) != 0 {
+	}
+	return this
+}
+
 func NewPopulatedUser(r randyUser, easy bool) *User {
 	this := &User{}
 	this.Id = int32(r.Int31())
@@ -1807,7 +2258,11 @@ func NewPopulatedUser(r randyUser, easy bool) *User {
 	}
 	this.Status = randStringUser(r)
 	if r.Intn(10) != 0 {
-		this.Perms = opsee_types3.NewPopulatedPermission(r, easy)
+		this.OldPerms = opsee_types3.NewPopulatedPermission(r, easy)
+	}
+	this.HasPassword = bool(bool(r.Intn(2) == 0))
+	if r.Intn(10) != 0 {
+		this.Perms = NewPopulatedUserFlags(r, easy)
 	}
 	if !easy && r.Intn(10) != 0 {
 	}
@@ -1913,7 +2368,10 @@ func NewPopulatedInvite(r randyUser, easy bool) *Invite {
 	this.Name = randStringUser(r)
 	this.CustomerId = randStringUser(r)
 	if r.Intn(10) != 0 {
-		this.Perms = opsee_types3.NewPopulatedPermission(r, easy)
+		this.OldPerms = opsee_types3.NewPopulatedPermission(r, easy)
+	}
+	if r.Intn(10) != 0 {
+		this.Perms = NewPopulatedUserFlags(r, easy)
 	}
 	if !easy && r.Intn(10) != 0 {
 	}
@@ -1992,6 +2450,21 @@ func encodeVarintPopulateUser(data []byte, v uint64) []byte {
 	data = append(data, uint8(v))
 	return data
 }
+func (m *UserFlags) Size() (n int) {
+	var l int
+	_ = l
+	if m.Admin {
+		n += 2
+	}
+	if m.Edit {
+		n += 2
+	}
+	if m.Billing {
+		n += 2
+	}
+	return n
+}
+
 func (m *User) Size() (n int) {
 	var l int
 	_ = l
@@ -2037,6 +2510,13 @@ func (m *User) Size() (n int) {
 	l = len(m.Status)
 	if l > 0 {
 		n += 1 + l + sovUser(uint64(l))
+	}
+	if m.OldPerms != nil {
+		l = m.OldPerms.Size()
+		n += 1 + l + sovUser(uint64(l))
+	}
+	if m.HasPassword {
+		n += 2
 	}
 	if m.Perms != nil {
 		l = m.Perms.Size()
@@ -2171,6 +2651,10 @@ func (m *Invite) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovUser(uint64(l))
 	}
+	if m.OldPerms != nil {
+		l = m.OldPerms.Size()
+		n += 1 + l + sovUser(uint64(l))
+	}
 	if m.Perms != nil {
 		l = m.Perms.Size()
 		n += 1 + l + sovUser(uint64(l))
@@ -2190,6 +2674,116 @@ func sovUser(x uint64) (n int) {
 }
 func sozUser(x uint64) (n int) {
 	return sovUser(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *UserFlags) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowUser
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UserFlags: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UserFlags: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Admin", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowUser
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Admin = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Edit", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowUser
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Edit = bool(v != 0)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Billing", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowUser
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Billing = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipUser(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthUser
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *User) Unmarshal(data []byte) error {
 	l := len(data)
@@ -2531,6 +3125,59 @@ func (m *User) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 13:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OldPerms", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowUser
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthUser
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.OldPerms == nil {
+				m.OldPerms = &opsee_types3.Permission{}
+			}
+			if err := m.OldPerms.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HasPassword", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowUser
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.HasPassword = bool(v != 0)
+		case 15:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Perms", wireType)
 			}
 			var msglen int
@@ -2556,7 +3203,7 @@ func (m *User) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Perms == nil {
-				m.Perms = &opsee_types3.Permission{}
+				m.Perms = &UserFlags{}
 			}
 			if err := m.Perms.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
@@ -3454,7 +4101,7 @@ func (m *Invite) Unmarshal(data []byte) error {
 			}
 			m.Name = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 7:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CustomerId", wireType)
 			}
@@ -3483,7 +4130,40 @@ func (m *Invite) Unmarshal(data []byte) error {
 			}
 			m.CustomerId = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 8:
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OldPerms", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowUser
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthUser
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.OldPerms == nil {
+				m.OldPerms = &opsee_types3.Permission{}
+			}
+			if err := m.OldPerms.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Perms", wireType)
 			}
@@ -3510,7 +4190,7 @@ func (m *Invite) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Perms == nil {
-				m.Perms = &opsee_types3.Permission{}
+				m.Perms = &UserFlags{}
 			}
 			if err := m.Perms.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
@@ -3643,60 +4323,67 @@ var (
 )
 
 var fileDescriptorUser = []byte{
-	// 870 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x55, 0xcf, 0x8f, 0xdb, 0x44,
-	0x14, 0x96, 0x77, 0xe3, 0xc4, 0x99, 0xfc, 0x00, 0xa6, 0xe9, 0x62, 0xb6, 0x62, 0xd3, 0x8e, 0x7a,
-	0xa8, 0x80, 0x4d, 0x10, 0x54, 0x48, 0xac, 0x40, 0x02, 0xef, 0x85, 0x45, 0xaa, 0x84, 0x86, 0x72,
-	0x80, 0x4b, 0x34, 0xb6, 0x67, 0x37, 0xa3, 0xd6, 0x3f, 0xe4, 0x19, 0x2f, 0xf4, 0x86, 0x38, 0x71,
-	0xe6, 0x4f, 0x40, 0x02, 0xf1, 0x27, 0x70, 0xe4, 0xc8, 0x91, 0xbf, 0xa0, 0x02, 0x24, 0x2e, 0x1c,
-	0x39, 0x71, 0xe4, 0xcd, 0xf3, 0x38, 0x71, 0x8a, 0x8a, 0x16, 0xc1, 0xc1, 0xca, 0x7c, 0x7e, 0xdf,
-	0x7b, 0x7e, 0xf3, 0xcd, 0xf7, 0x26, 0x84, 0xd4, 0x5a, 0x56, 0x8b, 0xb2, 0x2a, 0x4c, 0x41, 0xfd,
-	0xa2, 0xd4, 0x52, 0x1e, 0x1e, 0x5f, 0x28, 0xb3, 0xae, 0xe3, 0x45, 0x52, 0x64, 0xcb, 0x8b, 0xe2,
-	0xa2, 0x58, 0x62, 0x34, 0xae, 0xcf, 0x11, 0x21, 0xc0, 0x55, 0x93, 0x75, 0xf8, 0x6a, 0x87, 0x8e,
-	0x05, 0xb6, 0x7c, 0x84, 0x4d, 0x02, 0x2e, 0x5d, 0xc6, 0x5b, 0x57, 0xca, 0x30, 0x8f, 0x4a, 0xa9,
-	0x97, 0xa5, 0xac, 0x32, 0xa5, 0xb5, 0x2a, 0x72, 0xed, 0xb2, 0x4f, 0xfe, 0x45, 0xb6, 0x51, 0x99,
-	0xd4, 0x46, 0x64, 0xa5, 0xcb, 0x1d, 0x01, 0x48, 0x1e, 0x34, 0x80, 0xfd, 0xe6, 0x93, 0xde, 0x47,
-	0xb0, 0x7b, 0xca, 0xc8, 0x9e, 0x4a, 0x43, 0xef, 0xa6, 0x77, 0xc7, 0x8f, 0xe8, 0xe7, 0xdf, 0xbe,
-	0xe8, 0xfd, 0xf1, 0x78, 0x4e, 0x4c, 0xf1, 0x40, 0xe6, 0x27, 0x4c, 0xa5, 0x8c, 0x43, 0x94, 0xde,
-	0x23, 0xa3, 0xa4, 0xd6, 0xa6, 0xc8, 0x64, 0xb5, 0x02, 0xf2, 0x1e, 0x90, 0x87, 0xd1, 0x2b, 0x8e,
-	0x7c, 0xdb, 0x91, 0x3b, 0x0c, 0x76, 0x33, 0x8d, 0x77, 0x5f, 0x70, 0xd2, 0xa2, 0xb3, 0x94, 0xbe,
-	0x4c, 0x7c, 0x99, 0x09, 0xf5, 0x30, 0xdc, 0xc7, 0x42, 0xd7, 0x5d, 0xa1, 0x89, 0x2b, 0x84, 0x31,
-	0xc6, 0x1b, 0x0e, 0xbd, 0x43, 0x7a, 0xb9, 0xc8, 0x64, 0xd8, 0x43, 0xee, 0xcc, 0x71, 0xc7, 0x8e,
-	0x6b, 0x43, 0x8c, 0x23, 0x83, 0xde, 0x25, 0xc1, 0xa5, 0xac, 0xd4, 0xb9, 0x92, 0x69, 0xe8, 0x03,
-	0x3b, 0x88, 0x42, 0xc7, 0x7e, 0xd6, 0xb1, 0xdb, 0x30, 0xe3, 0x1b, 0xa6, 0x6d, 0x46, 0xa4, 0x99,
-	0xca, 0xc3, 0x3e, 0xa6, 0x3c, 0xd9, 0x0c, 0xc6, 0xa0, 0x19, 0xfc, 0xa5, 0x0b, 0xd2, 0x17, 0x89,
-	0x51, 0x97, 0x32, 0x1c, 0x20, 0xfb, 0xc0, 0xb1, 0xa7, 0x2d, 0x1b, 0x83, 0x8c, 0x3b, 0x16, 0x5d,
-	0x92, 0x00, 0x13, 0xad, 0x6a, 0x01, 0x4a, 0x3c, 0xeb, 0xb4, 0xd3, 0x86, 0x18, 0x1f, 0xe0, 0x12,
-	0xa4, 0x79, 0x87, 0x4c, 0x4a, 0xa1, 0xf5, 0xa7, 0x45, 0x95, 0xae, 0xd6, 0x42, 0xaf, 0xc3, 0x21,
-	0x6e, 0xfb, 0xc6, 0xef, 0x8f, 0xe7, 0xde, 0x31, 0xa4, 0x52, 0x2b, 0xec, 0x0e, 0x83, 0xf1, 0x71,
-	0x8b, 0xdf, 0x03, 0x48, 0xdf, 0x27, 0x24, 0xa9, 0xa4, 0x30, 0x32, 0x5d, 0x09, 0x13, 0x12, 0x48,
-	0x1f, 0xbd, 0x76, 0xb0, 0x68, 0x1c, 0x88, 0xbe, 0x58, 0xdc, 0x6f, 0x7d, 0x11, 0x5d, 0x83, 0x8a,
-	0xcf, 0xe0, 0x51, 0x6d, 0x32, 0x18, 0x1f, 0x3a, 0xf0, 0xae, 0xb1, 0xb5, 0xea, 0x32, 0x6d, 0x6b,
-	0x8d, 0xae, 0x56, 0x6b, 0x9b, 0x01, 0xb5, 0x1c, 0x80, 0x5a, 0x6f, 0x90, 0x3e, 0x10, 0x4d, 0xad,
-	0xc3, 0x31, 0x6e, 0xe9, 0x08, 0xf8, 0x87, 0x4e, 0x88, 0x26, 0xd0, 0xb8, 0xc6, 0xad, 0xb9, 0x63,
-	0xd3, 0xb7, 0x89, 0x6f, 0xc7, 0x40, 0x87, 0x13, 0xfc, 0xfc, 0xf3, 0x3b, 0x9f, 0xff, 0x60, 0x33,
-	0x20, 0xd1, 0xd4, 0xfa, 0x16, 0xd5, 0xb1, 0x6c, 0x38, 0xb1, 0xe6, 0xf7, 0x9b, 0x3d, 0x12, 0x9c,
-	0x3a, 0xeb, 0xd1, 0xe9, 0xc6, 0xeb, 0x43, 0xf4, 0x35, 0x75, 0xde, 0x42, 0x43, 0x3b, 0x17, 0xed,
-	0xea, 0xb7, 0xff, 0x3f, 0xea, 0xd7, 0xfb, 0x4f, 0xfa, 0xdd, 0x22, 0xbe, 0xbd, 0xad, 0x34, 0x58,
-	0x7b, 0x1f, 0xca, 0x8c, 0x5c, 0x19, 0x3b, 0xc3, 0xbc, 0x89, 0xd0, 0x13, 0x32, 0x8d, 0x85, 0x36,
-	0xa0, 0xc6, 0xca, 0x8a, 0x27, 0x35, 0x78, 0xda, 0x72, 0xaf, 0x39, 0x6e, 0xd4, 0x04, 0x3f, 0xb4,
-	0x31, 0x3e, 0x89, 0x3b, 0x48, 0xb3, 0x2f, 0xf6, 0x48, 0xef, 0xbe, 0x14, 0xd9, 0xdf, 0x34, 0xba,
-	0xd5, 0xd5, 0x28, 0x9a, 0x40, 0x97, 0x43, 0xdb, 0x65, 0x77, 0xf0, 0xde, 0x24, 0x63, 0x5d, 0xc7,
-	0x3a, 0xa9, 0x54, 0x69, 0x2b, 0xb6, 0x63, 0x0d, 0xd4, 0xe7, 0xf0, 0x44, 0x3b, 0x31, 0x70, 0x6b,
-	0x17, 0xc2, 0xe9, 0x4e, 0x41, 0xae, 0x54, 0x99, 0x53, 0x51, 0xa5, 0x67, 0xf9, 0x79, 0xe1, 0x54,
-	0xba, 0xee, 0x5a, 0x3e, 0xdd, 0x09, 0xf2, 0x27, 0xc8, 0xf4, 0x25, 0x12, 0xa8, 0xfc, 0xb2, 0x50,
-	0x89, 0x6c, 0x75, 0x99, 0xba, 0xc4, 0xb3, 0xe6, 0x35, 0xdf, 0xc4, 0xb7, 0x02, 0xf6, 0x9f, 0x26,
-	0x20, 0x13, 0x64, 0xe0, 0xf2, 0xa0, 0x72, 0xcf, 0x2a, 0x8f, 0x42, 0x3c, 0xf5, 0xd0, 0x38, 0x72,
-	0xe8, 0x01, 0xdc, 0x0a, 0x59, 0x51, 0xe7, 0x06, 0x45, 0xf2, 0xb9, 0x43, 0xd6, 0x5e, 0xa5, 0x00,
-	0x31, 0xad, 0x1e, 0x01, 0xc7, 0x35, 0xfb, 0xd2, 0x23, 0xd3, 0xdd, 0x4d, 0x6d, 0x5c, 0xe8, 0x75,
-	0x5c, 0x38, 0x23, 0xfe, 0x43, 0x38, 0x9f, 0xbb, 0xce, 0x9a, 0x0d, 0xa0, 0x37, 0xc8, 0x50, 0x7e,
-	0x56, 0xae, 0xb2, 0x22, 0x37, 0x6b, 0xac, 0xea, 0xf3, 0x00, 0x5e, 0xdc, 0xb3, 0x98, 0xbe, 0x40,
-	0xec, 0x7a, 0xf5, 0x48, 0x8a, 0x0a, 0x45, 0xf4, 0xf9, 0x00, 0xf0, 0xc7, 0x00, 0x6d, 0xb5, 0xb8,
-	0x12, 0x79, 0x73, 0x2d, 0x42, 0x35, 0x04, 0xec, 0x2b, 0x8f, 0xf4, 0x61, 0xbb, 0x0a, 0x76, 0xb0,
-	0x3d, 0x74, 0x1f, 0x0f, 0x7d, 0xd6, 0xde, 0xd0, 0xee, 0xf3, 0xcd, 0x55, 0xdc, 0x36, 0xba, 0xdf,
-	0x69, 0x74, 0xbe, 0xfb, 0xd7, 0x30, 0xc0, 0x50, 0xf7, 0xb2, 0x3f, 0x6e, 0xe7, 0x37, 0xf8, 0xc7,
-	0xf9, 0x75, 0xf3, 0x1a, 0xdd, 0xfe, 0xf3, 0x97, 0x23, 0xef, 0xbb, 0x5f, 0x8f, 0xbc, 0xef, 0xe1,
-	0xf9, 0x11, 0x9e, 0x9f, 0xe0, 0xf9, 0x19, 0x9e, 0x1f, 0xbe, 0x9e, 0x7b, 0x9f, 0xf4, 0x75, 0xb2,
-	0x86, 0x5e, 0xe2, 0x3e, 0xfe, 0x89, 0xbd, 0xfe, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0x04, 0xac,
-	0x02, 0xa9, 0xc1, 0x07, 0x00, 0x00,
+	// 981 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x55, 0xcd, 0x6e, 0x1c, 0x45,
+	0x10, 0xd6, 0xd8, 0x3b, 0xeb, 0xdd, 0xda, 0x9f, 0x98, 0x8e, 0x13, 0x06, 0x07, 0x6c, 0xa7, 0x65,
+	0xa1, 0x08, 0x88, 0x8d, 0x48, 0x84, 0xc0, 0x02, 0x29, 0x8c, 0x11, 0xc2, 0x48, 0x91, 0xa2, 0x26,
+	0x39, 0xc0, 0x65, 0x35, 0xb3, 0xd3, 0xde, 0x6d, 0x65, 0xe7, 0x47, 0xd3, 0xb3, 0x86, 0xdc, 0x10,
+	0x27, 0x9e, 0x03, 0x09, 0xc4, 0x23, 0x70, 0x84, 0x5b, 0x8e, 0x3c, 0x41, 0x04, 0x1c, 0x39, 0x72,
+	0x40, 0x1c, 0xa9, 0xae, 0xee, 0x59, 0xcf, 0x00, 0x91, 0x8c, 0xc8, 0x61, 0xa4, 0xfe, 0xba, 0xbe,
+	0xaa, 0xa9, 0xfe, 0xaa, 0xaa, 0x1b, 0x60, 0xa9, 0x65, 0x79, 0x50, 0x94, 0x79, 0x95, 0x33, 0x3f,
+	0x2f, 0xb4, 0x94, 0xdb, 0x37, 0x67, 0xaa, 0x9a, 0x2f, 0xe3, 0x83, 0x69, 0x9e, 0x1e, 0xce, 0xf2,
+	0x59, 0x7e, 0x48, 0xd6, 0x78, 0x79, 0x4a, 0x88, 0x00, 0xad, 0xac, 0xd7, 0xf6, 0xeb, 0x0d, 0x3a,
+	0x05, 0x38, 0xe7, 0x13, 0xb4, 0x0e, 0xb4, 0x74, 0x1e, 0xef, 0x5c, 0xc8, 0xa3, 0x7a, 0x54, 0x48,
+	0x7d, 0x58, 0xc8, 0x32, 0x55, 0x5a, 0xab, 0x3c, 0xd3, 0xce, 0xfb, 0xe8, 0x3f, 0x78, 0x57, 0x2a,
+	0x95, 0xba, 0x8a, 0xd2, 0xc2, 0xf9, 0x0e, 0x10, 0x4c, 0x1f, 0x5a, 0xc0, 0x1f, 0x40, 0xff, 0x01,
+	0x1e, 0xfe, 0x83, 0x45, 0x34, 0xd3, 0x6c, 0x0b, 0xfc, 0x28, 0x49, 0x55, 0x16, 0x78, 0x7b, 0xde,
+	0x8d, 0x9e, 0xb0, 0x80, 0x31, 0xe8, 0xc8, 0x44, 0x55, 0xc1, 0x1a, 0x6d, 0xd2, 0x9a, 0x05, 0xb0,
+	0x11, 0xab, 0xc5, 0x42, 0x65, 0xb3, 0x60, 0x9d, 0xb6, 0x6b, 0x78, 0xd4, 0x79, 0xfc, 0xf5, 0xae,
+	0xc7, 0xff, 0xe8, 0x42, 0xc7, 0xc4, 0x65, 0x1c, 0xd6, 0x54, 0x42, 0xf1, 0xfc, 0x90, 0x7d, 0xf1,
+	0xed, 0x4b, 0xde, 0xef, 0x4f, 0x76, 0xa1, 0xca, 0x1f, 0xca, 0xec, 0x88, 0xab, 0x84, 0x0b, 0xb4,
+	0xb2, 0xbb, 0x30, 0x98, 0x2e, 0x75, 0x95, 0xa7, 0xb2, 0x9c, 0x20, 0xd9, 0xfc, 0xa7, 0x1f, 0xbe,
+	0xe6, 0xc8, 0xfb, 0x8e, 0xdc, 0x60, 0xf0, 0xbd, 0x24, 0x6e, 0x6f, 0x08, 0xa8, 0xd1, 0x49, 0xc2,
+	0x5e, 0x05, 0x5f, 0xa6, 0x91, 0x5a, 0x50, 0x66, 0xfd, 0xf0, 0x8a, 0x0b, 0x34, 0x72, 0x81, 0xc8,
+	0xc6, 0x85, 0xe5, 0xb0, 0x1b, 0xd0, 0xc9, 0xa2, 0x54, 0x06, 0x1d, 0xe2, 0x6e, 0x39, 0xee, 0xd0,
+	0x71, 0x8d, 0x89, 0x0b, 0x62, 0xb0, 0x3b, 0xd0, 0x3b, 0x93, 0xa5, 0x3a, 0x55, 0x32, 0x09, 0x7c,
+	0x73, 0xe6, 0x70, 0xdf, 0xb0, 0x7f, 0x7b, 0xb2, 0xbb, 0xda, 0x47, 0xcf, 0x4d, 0xe7, 0x59, 0x6f,
+	0x71, 0xb1, 0xb2, 0xb2, 0xdb, 0xb5, 0xbc, 0x5d, 0x72, 0xdf, 0x71, 0xee, 0x76, 0xb3, 0x91, 0x21,
+	0x61, 0x5e, 0xcb, 0xff, 0x16, 0x74, 0xa3, 0x69, 0xa5, 0xce, 0x64, 0xb0, 0x41, 0x6e, 0x7b, 0xce,
+	0xcd, 0xed, 0xa2, 0xdf, 0xb8, 0xf6, 0xa3, 0x0d, 0x2e, 0x9c, 0x85, 0x1d, 0x42, 0x8f, 0x42, 0x18,
+	0x51, 0x7b, 0x54, 0x81, 0xad, 0x46, 0x86, 0xb5, 0x89, 0x8b, 0x0d, 0x5a, 0xa2, 0x72, 0x77, 0x60,
+	0x54, 0x44, 0x5a, 0x7f, 0x96, 0x97, 0xc9, 0x64, 0x1e, 0xe9, 0x79, 0xd0, 0x27, 0x55, 0xae, 0xe1,
+	0xdf, 0xbc, 0x9b, 0xe8, 0xca, 0x8c, 0xee, 0x2d, 0x06, 0x17, 0xc3, 0x1a, 0x7f, 0x88, 0x90, 0x7d,
+	0x04, 0x30, 0x2d, 0x65, 0x54, 0xc9, 0x64, 0x12, 0x55, 0x01, 0xa0, 0xfb, 0xe0, 0x8d, 0xab, 0x07,
+	0xb6, 0xef, 0xa9, 0x1b, 0x0f, 0xee, 0xd7, 0xdd, 0x18, 0x5e, 0xc6, 0x88, 0x97, 0xa8, 0x92, 0x2b,
+	0x0f, 0x2e, 0xfa, 0x0e, 0xbc, 0x57, 0x99, 0x58, 0xcb, 0x22, 0xa9, 0x63, 0x0d, 0x2e, 0x16, 0xeb,
+	0xdc, 0x03, 0x63, 0x39, 0x80, 0xb1, 0xde, 0x84, 0x2e, 0x12, 0xab, 0xa5, 0x0e, 0x86, 0x74, 0xa4,
+	0x1d, 0xe4, 0x6f, 0x3b, 0x21, 0xac, 0xc1, 0x36, 0x95, 0x5b, 0x0b, 0xc7, 0xc6, 0x92, 0xf5, 0xf3,
+	0x45, 0x32, 0x31, 0x03, 0xa8, 0x83, 0x11, 0xa5, 0xf0, 0x7c, 0x2b, 0x85, 0x7b, 0xab, 0xd1, 0x14,
+	0x3d, 0x64, 0x1a, 0xa8, 0xd9, 0x2d, 0x18, 0xa2, 0x38, 0x93, 0x5a, 0x99, 0x60, 0x4c, 0x85, 0xdb,
+	0x44, 0x19, 0x5b, 0xfb, 0x62, 0x80, 0xe8, 0x9e, 0x03, 0xec, 0x7d, 0xf0, 0xed, 0x6f, 0x2e, 0xd1,
+	0x6f, 0x36, 0xdd, 0x6f, 0x56, 0xd3, 0x19, 0xbe, 0x88, 0x39, 0x07, 0x54, 0x01, 0x43, 0xe3, 0x7b,
+	0x2e, 0x7d, 0x8b, 0x84, 0x75, 0xe6, 0xdf, 0xac, 0x41, 0xef, 0xd8, 0xcd, 0x02, 0x1b, 0xaf, 0x86,
+	0xaf, 0x4f, 0x83, 0xc6, 0x5c, 0xb3, 0xd3, 0x84, 0xb9, 0xb6, 0x6e, 0x57, 0x6c, 0xfd, 0x19, 0x56,
+	0xac, 0xf3, 0xbf, 0x2a, 0x76, 0x1d, 0x7c, 0x73, 0x2b, 0x6b, 0x9c, 0xb5, 0x75, 0x0c, 0x33, 0x68,
+	0xc8, 0x21, 0xac, 0x85, 0x1d, 0xc1, 0x38, 0x8e, 0x74, 0x85, 0xda, 0x4f, 0x4c, 0xb9, 0xa4, 0xc6,
+	0xc1, 0x32, 0xdc, 0xcb, 0x8e, 0x1b, 0x5a, 0xe3, 0xc7, 0xc6, 0x26, 0x46, 0x71, 0x03, 0x69, 0xfe,
+	0xe5, 0x1a, 0x74, 0xee, 0xcb, 0x28, 0xfd, 0x87, 0x46, 0xd7, 0x9b, 0x1a, 0x85, 0x23, 0xcc, 0xb2,
+	0x6f, 0xb2, 0x6c, 0xde, 0x04, 0x6f, 0xc3, 0x50, 0x2f, 0x63, 0x3d, 0x2d, 0x55, 0x61, 0x22, 0xd6,
+	0xf7, 0x0c, 0x52, 0x9f, 0xa3, 0x1e, 0x6a, 0xd8, 0x70, 0x3e, 0x9a, 0x90, 0xbd, 0x0b, 0x63, 0x94,
+	0x0b, 0x6f, 0xd0, 0xe3, 0xa8, 0x4c, 0x4e, 0xb2, 0xd3, 0xdc, 0xa9, 0x74, 0xc5, 0xa5, 0x7c, 0xdc,
+	0x32, 0x8a, 0xbf, 0x91, 0xd9, 0x2b, 0xd0, 0x53, 0xd9, 0x59, 0xae, 0xa6, 0xb2, 0xd6, 0x65, 0xec,
+	0x1c, 0x4f, 0xec, 0xb6, 0x58, 0xd9, 0xcf, 0x05, 0xec, 0x3e, 0x4d, 0x40, 0x1e, 0xc1, 0x86, 0xf3,
+	0xc3, 0xc8, 0x1d, 0xa3, 0x3c, 0x09, 0xf1, 0xd4, 0xa2, 0x09, 0xe2, 0xb0, 0xab, 0x78, 0x23, 0xa5,
+	0xf9, 0x32, 0xb3, 0x4f, 0x82, 0x2f, 0x1c, 0x32, 0xed, 0x55, 0x44, 0x28, 0xa6, 0x7d, 0x11, 0x68,
+	0xcd, 0xbf, 0xf2, 0x60, 0xdc, 0x3e, 0xd4, 0xaa, 0x0b, 0xbd, 0x46, 0x17, 0xe2, 0xcb, 0xb3, 0xc0,
+	0xfa, 0xdc, 0x76, 0xad, 0x69, 0x01, 0xbb, 0x06, 0x7d, 0xf9, 0x79, 0x31, 0x49, 0xf3, 0xac, 0x9a,
+	0x53, 0x54, 0x5f, 0xf4, 0x70, 0xe3, 0xae, 0xc1, 0xec, 0x05, 0x30, 0xeb, 0xc9, 0x23, 0x19, 0x95,
+	0x24, 0xa2, 0x2f, 0x36, 0x10, 0x7f, 0x82, 0xd0, 0x44, 0x8b, 0xcb, 0x28, 0xb3, 0xf7, 0x34, 0x46,
+	0x23, 0xc0, 0x7f, 0xf4, 0xa0, 0x8b, 0xc7, 0x55, 0x78, 0x82, 0xf3, 0xa2, 0xfb, 0x54, 0xf4, 0xad,
+	0xfa, 0xc9, 0x70, 0xbf, 0xb7, 0x6f, 0x43, 0x9d, 0xe8, 0x7a, 0x23, 0xd1, 0xdd, 0xf6, 0x5b, 0x45,
+	0xcf, 0x46, 0xeb, 0xf5, 0x69, 0xdd, 0x18, 0xfe, 0x45, 0x6f, 0x8c, 0x97, 0xeb, 0xe1, 0xef, 0xfe,
+	0xfb, 0xf0, 0xbb, 0xf1, 0x0e, 0xf7, 0xff, 0xfc, 0x65, 0xc7, 0xfb, 0xee, 0xd7, 0x1d, 0xef, 0x7b,
+	0xfc, 0x1e, 0xe3, 0xf7, 0x13, 0x7e, 0x3f, 0xe3, 0xf7, 0x03, 0xbe, 0xba, 0x9f, 0x76, 0xf5, 0x74,
+	0x8e, 0xa9, 0xc7, 0x5d, 0x7a, 0xdb, 0x6f, 0xfd, 0x15, 0x00, 0x00, 0xff, 0xff, 0x59, 0x2b, 0xc4,
+	0x54, 0xd8, 0x08, 0x00, 0x00,
 }
