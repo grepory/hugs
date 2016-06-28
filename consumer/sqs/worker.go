@@ -16,7 +16,7 @@ import (
 	"github.com/opsee/hugs/consumer"
 	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/store"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 	"github.com/yeller/yeller-golang"
 )
 

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/opsee/hugs/obj"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 func TestStorePutPagerDutyOAuthResponse(t *testing.T) {

@@ -3,7 +3,7 @@ package store
 import (
 	"testing"
 
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 func TestStorePutNotifications(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 	"github.com/stretchr/testify/assert"
 )
 

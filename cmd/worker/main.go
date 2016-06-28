@@ -8,7 +8,7 @@ import (
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/consumer/nsq"
 	"github.com/opsee/hugs/util"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 	"github.com/yeller/yeller-golang"
 )
 

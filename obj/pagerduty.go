@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx/types"
 	"github.com/opsee/hugs/util"
-	log "github.com/sirupsen/logrus"
+	log "github.com/opsee/logrus"
 )
 
 const PagerDutyIntegrationsAPIEndpoint = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"

@@ -10,8 +10,8 @@ import (
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
+	log "github.com/opsee/logrus"
 	pdtmpl "github.com/opsee/notification-templates/dist/go/pagerduty"
-	log "github.com/sirupsen/logrus"
 )
 
 type PagerDutySender struct {

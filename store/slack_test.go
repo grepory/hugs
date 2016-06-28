@@ -3,8 +3,8 @@ package store
 import (
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/opsee/hugs/obj"
+	log "github.com/opsee/logrus"
 )
 
 func TestStorePutSlackOAuthResponse(t *testing.T) {
