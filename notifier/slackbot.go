@@ -15,17 +15,12 @@ import (
 )
 
 type SlackBotSender struct {
-	templates   map[string]*mustache.Template
-	resultCache ResultCache
+	templates map[string]*mustache.Template
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
 func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 	result := e.Result
-	results, err := this.resultCache.Results(result.CheckId)
-	if err != nil {
-		return err
-	}
 
 	templateKey := "check-passing"
 	if !result.Passing {
@@ -35,7 +30,7 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 	// Bleh. This is copypasta from email.go
 	// TODO(greg): When we move to a generic model, we can figure out a way
 	// to centralize all of this logic so that senders can finally be dumb.
-	failingResponses := results.FailingResponses
+	failingResponses := result.FailingResponses()
 
 	// It's a possible error state that if the CheckResult.Passing field is false,
 	// i.e. this is a failing event, that there are somehow no constituent failing
@@ -56,7 +51,7 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 			"check_id":       result.CheckId,
 			"check_name":     result.CheckName,
 			"group_name":     result.Target.Id,
-			"instance_count": len(results.Targets),
+			"instance_count": len(result.Responses),
 			"fail_count":     len(failingResponses),
 			"token":          token,
 			"channel":        n.Value,
@@ -109,7 +104,7 @@ func (this SlackBotSender) getSlackToken(n *obj.Notification) (string, error) {
 	return oaResponse.Bot.BotAccessToken, nil
 }
 
-func NewSlackBotSender(resultCache ResultCache) (*SlackBotSender, error) {
+func NewSlackBotSender() (*SlackBotSender, error) {
 	// initialize check failing template
 	failTemplate, err := mustache.ParseString(slacktmpl.CheckFailing)
 	if err != nil {
@@ -128,7 +123,6 @@ func NewSlackBotSender(resultCache ResultCache) (*SlackBotSender, error) {
 	}
 
 	return &SlackBotSender{
-		templates:   templateMap,
-		resultCache: resultCache,
+		templates: templateMap,
 	}, nil
 }

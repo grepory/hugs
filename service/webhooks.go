@@ -20,7 +20,7 @@ func (s *Service) postWebHookTest() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		webHookSender, err := notifier.NewWebHookSender(testResultCache{})
+		webHookSender, err := notifier.NewWebHookSender()
 		if err != nil {
 			log.WithError(err).Error("Couldn't get web hook sender")
 			return ctx, http.StatusBadRequest, errUnknown

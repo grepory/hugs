@@ -10,7 +10,6 @@ import (
 	"github.com/opsee/basic/schema"
 	"github.com/opsee/basic/tp"
 	"github.com/opsee/hugs/config"
-	"github.com/opsee/hugs/notifier"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 )
@@ -27,12 +26,6 @@ var (
 	errUnauthorized = errors.New("unauthorized.")
 	errUnknown      = errors.New("unknown error.")
 )
-
-type testResultCache struct{}
-
-func (tr testResultCache) Results(checkId string) (*notifier.ResultCacheItem, error) {
-	return &notifier.ResultCacheItem{}, nil
-}
 
 type Service struct {
 	db     *store.Postgres

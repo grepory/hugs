@@ -61,7 +61,7 @@ func (s *Service) postSlackTest() tp.HandleFunc {
 			return ctx, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		slackSender, err := notifier.NewSlackBotSender(testResultCache{})
+		slackSender, err := notifier.NewSlackBotSender()
 		if err != nil {
 			log.WithFields(log.Fields{"service": "postSlackTest"}).Error("Couldn't get slack sender.")
 			return ctx, http.StatusBadRequest, errUnknown

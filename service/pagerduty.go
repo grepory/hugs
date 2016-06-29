@@ -20,7 +20,7 @@ func (s *Service) postPagerDutyTest() tp.HandleFunc {
 			return nil, http.StatusUnauthorized, errors.New("Unable to get User from request context")
 		}
 
-		pdSender, err := notifier.NewPagerDutySender(testResultCache{})
+		pdSender, err := notifier.NewPagerDutySender()
 		if err != nil {
 			log.WithError(err).Error("Couldn't get pagerduty sender")
 			return nil, http.StatusInternalServerError, errUnknown

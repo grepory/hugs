@@ -12,9 +12,7 @@ import (
 	opsee_types "github.com/opsee/protobuf/opseeproto/types"
 )
 
-type WebHookSender struct {
-	resultCache ResultCache
-}
+type WebHookSender struct{}
 
 type FullCheckResponse struct {
 	Target   *schema.Target   `protobuf:"bytes,1,opt,name=target" json:"target,omitempty"`
@@ -34,7 +32,7 @@ type FullCheckResult struct {
 	Version    int32                  `protobuf:"varint,8,opt,name=version" json:"version,omitempty"`
 }
 
-func (this *WebHookSender) NewFullCheckResult(checkResult *schema.CheckResult) (*FullCheckResult, error) {
+func NewFullCheckResult(checkResult *schema.CheckResult) (*FullCheckResult, error) {
 	fullCheckResult := &FullCheckResult{
 		CheckId:    checkResult.CheckId,
 		CustomerId: checkResult.CustomerId,
@@ -45,13 +43,8 @@ func (this *WebHookSender) NewFullCheckResult(checkResult *schema.CheckResult) (
 		Version:    checkResult.Version,
 	}
 
-	results, err := this.resultCache.Results(checkResult.CheckId)
-	if err != nil {
-		return nil, err
-	}
-
 	fullResponses := []*FullCheckResponse{}
-	for _, response := range results.Responses {
+	for _, response := range checkResult.Responses {
 		fullResponse := &FullCheckResponse{
 			Target:  response.Target,
 			Error:   response.Error,
@@ -92,7 +85,7 @@ func (this *WebHookSender) NewFullCheckResult(checkResult *schema.CheckResult) (
 // Send notification to customer.  At this point we have done basic validation on notification and event
 func (this *WebHookSender) Send(n *obj.Notification, e *obj.Event) error {
 
-	fullResult, err := this.NewFullCheckResult(e.Result)
+	fullResult, err := NewFullCheckResult(e.Result)
 	if err != nil {
 		return err
 	}
@@ -116,8 +109,6 @@ func (this *WebHookSender) Send(n *obj.Notification, e *obj.Event) error {
 	return nil
 }
 
-func NewWebHookSender(resultCache ResultCache) (*WebHookSender, error) {
-	return &WebHookSender{
-		resultCache: resultCache,
-	}, nil
+func NewWebHookSender() (*WebHookSender, error) {
+	return &WebHookSender{}, nil
 }
