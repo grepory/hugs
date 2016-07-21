@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -21,7 +22,7 @@ var (
 	}
 )
 
-func BuildEvent(n *obj.Notification, result *schema.CheckResult) *obj.Event {
+func BuildEvent(n *obj.Notification, result *schema.CheckResult) (*obj.Event, error) {
 	log.WithFields(log.Fields{"notification": n}).Info("Building event.")
 
 	event := &obj.Event{
@@ -35,15 +36,16 @@ func BuildEvent(n *obj.Notification, result *schema.CheckResult) *obj.Event {
 		resp, err := getNocapResponse(notifEndpoint, result)
 		if err != nil {
 			log.WithFields(log.Fields{"err": err}).Error("Error getting Notificaption data")
-		} else {
-			event.Nocap = resp
-			log.WithFields(log.Fields{"nocap": resp}).Info("Got nocap response")
+			return nil, err
 		}
+		event.Nocap = resp
+		log.WithFields(log.Fields{"nocap": resp}).Debug("Got nocap response")
 	} else {
 		log.Info("No notificaption endpoint configured.")
+		return nil, fmt.Errorf("No notificaption endpoint configured.")
 	}
 
-	return event
+	return event, nil
 }
 
 func getNocapResponse(nocapEndpoint string, result *schema.CheckResult) (*obj.NocapResponse, error) {

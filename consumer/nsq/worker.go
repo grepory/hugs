@@ -31,6 +31,7 @@ func NewWorker(Id string) (*Worker, error) {
 	for k, v := range errMap {
 		if v != nil {
 			log.WithFields(log.Fields{"worker": Id, "error": v}).Info("Couldn't initialize notifier: ", k)
+			return nil, v
 		}
 	}
 
@@ -53,7 +54,10 @@ func (w *Worker) Start() error {
 	}
 
 	consumer.AddConcurrentHandlers(w, 4)
-	consumer.ConnectToNSQLookupds([]string{"nsqlookupd.in.opsee.com:4161"})
+	if err := consumer.ConnectToNSQLookupds([]string{"nsqlookupd.in.opsee.com:4161"}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -78,7 +82,10 @@ func (w *Worker) HandleMessage(message *nsq.Message) error {
 		return nil
 	}
 
-	event := hugsconsumer.BuildEvent(notifications[0], result)
+	event, err := hugsconsumer.BuildEvent(notifications[0], result)
+	if err != nil {
+		return err
+	}
 
 	var msg string
 	if event.Result.Passing {
@@ -97,6 +104,7 @@ func (w *Worker) HandleMessage(message *nsq.Message) error {
 		sendErr := w.Notifier.Send(notification, event)
 		if sendErr != nil {
 			log.WithFields(log.Fields{"worker": w.Id, "err": sendErr}).Error("Error emitting notification")
+			return sendErr
 		} else {
 			log.WithFields(log.Fields{
 				"customer_id": event.Result.CustomerId,

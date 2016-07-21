@@ -74,8 +74,8 @@ func (n Notifier) getSender(t string) (Sender, error) {
 // A Send should require only a notification (userId, type, value) and Event (check info)
 func (n Notifier) Send(notification *obj.Notification, event *obj.Event) error {
 	sender, err := n.getSender(notification.Type)
-	if err == nil {
-		return sender.Send(notification, event)
+	if err != nil {
+		return err
 	}
-	return err
+	return sender.Send(notification, event)
 }

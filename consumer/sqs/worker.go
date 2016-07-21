@@ -47,6 +47,7 @@ func NewWorker(Id string, maxErr int, sqsUrl string) (*Worker, error) {
 	for k, v := range errMap {
 		if v != nil {
 			log.WithFields(log.Fields{"worker": Id, "error": v}).Info("Couldn't initialize notifier: ", k)
+			return nil, v
 		}
 	}
 
@@ -166,7 +167,10 @@ func (w *Worker) Work() {
 				log.WithError(err).WithFields(log.Fields{"worker": w.Id, "message": *message.Body}).Error("Cannot delete message from SQS.")
 			}
 		} else {
-			event := consumer.BuildEvent(notifications[0], result)
+			event, err := consumer.BuildEvent(notifications[0], result)
+			if err != nil {
+				return
+			}
 
 			var msg string
 			if event.Result.Passing {

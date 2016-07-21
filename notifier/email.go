@@ -139,7 +139,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 	message.MergeLanguage = "handlebars"
 	message.MergeVars = []*mandrill.RcptMergeVars{mandrill.MapToRecipientVars(n.Value, mergeVars)}
 
-	log.Info(message)
+	log.Debug(message)
 
 	_, err = es.mailClient.MessagesSendTemplate(message, templateName, templateContent)
 	return err
