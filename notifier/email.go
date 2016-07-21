@@ -34,7 +34,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		responses = result.FailingResponses()
 	}
 
-	log.WithFields(log.Fields{"responses": responses}).Info("Got responses.")
+	log.WithFields(log.Fields{"responses": responses}).Debug("Got responses.")
 
 	// It's a possible error state that if the CheckResult.Passing field is false,
 	// i.e. this is a failing event, that there are somehow no constituent failing
@@ -67,7 +67,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		"fail_count":     result.FailingCount(),
 		"opsee_host":     config.GetConfig().OpseeHost,
 	}
-	log.WithFields(log.Fields{"template_content": templateContent}).Info("Build template content")
+	log.WithFields(log.Fields{"template_content": templateContent}).Debug("Build template content")
 
 	if result.Target.Name != "" {
 		templateContent["group_name"] = result.Target.Name
