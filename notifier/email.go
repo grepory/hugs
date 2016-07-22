@@ -155,7 +155,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 
 func NewEmailSender(host string, mandrillKey string) (*EmailSender, error) {
 	catsConn, err := grpc.Dial(
-		"cats.in.opsee.com:9105",
+		"cats.in.opsee.com:443",
 		grpc.WithTransportCredentials(
 			credentials.NewTLS(&tls.Config{
 				InsecureSkipVerify: true,
