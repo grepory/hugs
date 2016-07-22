@@ -59,8 +59,6 @@ func (w *Worker) Start() error {
 		return err
 	}
 
-	consumer.SetLogger(nsq.LogLevelError)
-
 	return nil
 }
 
