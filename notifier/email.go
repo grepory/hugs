@@ -1,25 +1,28 @@
 package notifier
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
+	"golang.org/x/net/context"
+
 	"github.com/keighl/mandrill"
 	"github.com/opsee/basic/schema"
-	"github.com/opsee/cats/checks/results"
+	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
 	log "github.com/sirupsen/logrus"
 )
 
 type EmailSender struct {
-	opseeHost   string
-	mailClient  *mandrill.Client
-	resultStore results.Store
+	opseeHost  string
+	mailClient *mandrill.Client
+	catsClient opsee.CatsClient
 }
 
 func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
@@ -109,10 +112,14 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 			templateName = "check-fail-url"
 		}
 
-		results, err := es.resultStore.GetResultsByCheckId(result.CheckId)
+		catsResponse, err := es.catsClient.GetCheckResults(context.Background(), &opsee.GetCheckResultsRequest{
+			CheckId:    result.CheckId,
+			CustomerId: result.CustomerId,
+		})
 		if err != nil {
 			return err
 		}
+		results := catsResponse.Results
 
 		var (
 			instanceCount = len(results)
@@ -147,11 +154,21 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 }
 
 func NewEmailSender(host string, mandrillKey string) (*EmailSender, error) {
+	catsConn, err := grpc.Dial(
+		"cats.in.opsee.com:9105",
+		grpc.WithTransportCredentials(
+			credentials.NewTLS(&tls.Config{
+				InsecureSkipVerify: true,
+			}),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &EmailSender{
 		opseeHost:  host,
 		mailClient: mandrill.ClientWithKey(mandrillKey),
-		resultStore: &results.S3Store{
-			S3Client:   dynamodb.New(session.New(&aws.Config{Region: aws.String("us-west-2")})),
-			BucketName: "opsee-results-production"},
+		catsClient: opsee.NewCatsClient(catsConn),
 	}, nil
 }

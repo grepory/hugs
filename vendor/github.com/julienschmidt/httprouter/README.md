@@ -22,6 +22,8 @@ The router is optimized for high performance and a small memory footprint. It sc
 
 **No more server crashes:** You can set a [Panic handler][Router.PanicHandler] to deal with panics occurring during handling a HTTP request. The router then recovers and lets the `PanicHandler` log what happened and deliver a nice error page.
 
+**Perfect for APIs:** The router design encourages to build sensible, hierarchical RESTful APIs. Moreover it has builtin native support for [OPTIONS requests](http://zacstewart.com/2012/04/14/http-options-method.html) and `405 Method Not Allowed` replies.
+
 Of course you can also set **custom [`NotFound`][Router.NotFound] and  [`MethodNotAllowed`](https://godoc.org/github.com/julienschmidt/httprouter#Router.MethodNotAllowed) handlers** and [**serve static files**][Router.ServeFiles].
 
 ## Usage
@@ -273,6 +275,7 @@ If the HttpRouter is a bit too minimalistic for you, you might try one of the fo
 * [Neko](https://github.com/rocwong/neko): A lightweight web application framework for Golang
 * [Roxanna](https://github.com/iamthemuffinman/Roxanna): An amalgamation of httprouter, better logging, and hot reload
 * [siesta](https://github.com/VividCortex/siesta): Composable HTTP handlers with contexts
+* [xmux](https://github.com/rs/xmux): xmux is a httprouter fork on top of xhandler (net/context aware)
 
 [benchmark]: <https://github.com/julienschmidt/go-http-routing-benchmark>
 [http.Handler]: <https://golang.org/pkg/net/http/#Handler
