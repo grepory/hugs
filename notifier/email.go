@@ -10,9 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/keighl/mandrill"
 	"github.com/opsee/basic/schema"
+	"github.com/opsee/cats/checks/results"
 	"github.com/opsee/hugs/config"
 	"github.com/opsee/hugs/obj"
-	"github.com/opsee/pracovnik/results"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -148,8 +148,10 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 
 func NewEmailSender(host string, mandrillKey string) (*EmailSender, error) {
 	return &EmailSender{
-		opseeHost:   host,
-		mailClient:  mandrill.ClientWithKey(mandrillKey),
-		resultStore: &results.DynamoStore{dynamodb.New(session.New(&aws.Config{Region: aws.String("us-west-2")}))},
+		opseeHost:  host,
+		mailClient: mandrill.ClientWithKey(mandrillKey),
+		resultStore: &results.S3Store{
+			S3Client:   dynamodb.New(session.New(&aws.Config{Region: aws.String("us-west-2")})),
+			BucketName: "opsee-results-production"},
 	}, nil
 }
