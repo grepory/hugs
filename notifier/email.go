@@ -3,6 +3,7 @@ package notifier
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -124,7 +125,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 
 		// we have inconsistent results, so don't do anything
 		if !result.Passing && failCount == 0 {
-			return nil
+			return fmt.Errorf("Failing result, but fail count == 0")
 		}
 
 		templateContent["instance_count"] = instanceCount

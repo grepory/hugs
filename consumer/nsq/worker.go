@@ -43,7 +43,8 @@ func NewWorker(Id string) (*Worker, error) {
 }
 
 func (w *Worker) Start() error {
-	log.WithFields(log.Fields{"worker": w.Id}).Info("Starting up.")
+	logger := log.WithFields(log.Fields{"worker": w.Id})
+	logger.Info("Starting up.")
 
 	config := nsq.NewConfig()
 	config.MaxInFlight = 4
@@ -57,6 +58,8 @@ func (w *Worker) Start() error {
 	if err := consumer.ConnectToNSQLookupds([]string{"nsqlookupd.in.opsee.com:4161"}); err != nil {
 		return err
 	}
+
+	consumer.SetLogger(nsq.LogLevelError)
 
 	return nil
 }
@@ -105,12 +108,11 @@ func (w *Worker) HandleMessage(message *nsq.Message) error {
 		if sendErr != nil {
 			log.WithFields(log.Fields{"worker": w.Id, "err": sendErr}).Error("Error emitting notification")
 			return sendErr
-		} else {
-			log.WithFields(log.Fields{
-				"customer_id": event.Result.CustomerId,
-				"check_id":    event.Result.CheckId,
-			}).Info(fmt.Sprintf("Sent %s notification to customer.", notification.Type))
 		}
+		log.WithFields(log.Fields{
+			"customer_id": event.Result.CustomerId,
+			"check_id":    event.Result.CheckId,
+		}).Info(fmt.Sprintf("Sent %s notification to customer.", notification.Type))
 	}
 
 	return nil
