@@ -349,6 +349,12 @@
 			"revisionTime": "2016-06-23T15:26:15-07:00"
 		},
 		{
+			"checksumSHA1": "9U9OEoR//AVkPuNM7HsvA+sEdVU=",
+			"path": "github.com/opsee/cats/checks/results",
+			"revision": "d683a323d5876886bfb8606f949f960503165c37",
+			"revisionTime": "2016-07-21T18:11:37-07:00"
+		},
+		{
 			"checksumSHA1": "4SRqRNsZ2S+7ZXFbHn/4NxrflLU=",
 			"path": "github.com/opsee/logrus",
 			"revision": "6d9ae300aaf85d6acd2e5424081c7fcddb21dab8",
