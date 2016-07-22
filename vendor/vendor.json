@@ -128,6 +128,12 @@
 			"revisionTime": "2016-03-17T16:54:49-07:00"
 		},
 		{
+			"checksumSHA1": "68YN+UopWOSISIcQQ6zSVbyaDzQ=",
+			"path": "github.com/aws/aws-sdk-go/service/s3",
+			"revision": "7456ad9bd4ff1fa66fe7ccecf9bd343c0bf8ce11",
+			"revisionTime": "2016-07-13T13:06:11-07:00"
+		},
+		{
 			"path": "github.com/aws/aws-sdk-go/service/sqs",
 			"revision": "4da0bec8953a0a540f391930a946917b12a95671",
 			"revisionTime": "2016-03-17T16:54:49-07:00"
