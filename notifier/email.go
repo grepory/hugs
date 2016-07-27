@@ -94,7 +94,7 @@ func (es EmailSender) Send(n *obj.Notification, e *obj.Event) error {
 		}
 	}
 
-	// use different tempalte for RDS instances
+	// use different template for RDS instances
 	if result.Target.Type == "dbinstance" {
 		if result.Passing {
 			templateName = "check-pass-rds"
