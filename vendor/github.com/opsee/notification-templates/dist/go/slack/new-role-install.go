@@ -2,8 +2,8 @@ package slack
 
 import "github.com/hoisie/mustache"
 
-var NewSignup = `{
-  "text": ":moneybag: :rollin: NEW SIGNUP :pepe-trump: :moneybag:",
+var NewRoleInstall = `{
+  "text": ":bread: :garf: CROSS ACCOUNT ROLL HOT OUT OF THE OVEN :garf: :bread:",
   "username": "CustomerBot",
   "icon_url": "https://s3-us-west-1.amazonaws.com/opsee-public-images/slack-avi-48-green.png",
   "attachments": [
@@ -23,9 +23,9 @@ var NewSignup = `{
 `
 
 func init() {
-	tmpl, err := mustache.ParseString(NewSignup)
+	tmpl, err := mustache.ParseString(NewRoleInstall)
 	if err != nil {
 		panic(err)
 	}
-	Templates["new-signup"] = tmpl
+	Templates["new-role-install"] = tmpl
 }

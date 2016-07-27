@@ -61,6 +61,7 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 			"group_name":     result.Target.Id,
 			"instance_count": len(result.Responses),
 			"fail_count":     len(failingResponses),
+			"type":           "target",
 			"token":          token,
 			"channel":        n.Value,
 		}
@@ -97,6 +98,7 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 
 			templateContent["instance_count"] = instanceCount
 			templateContent["fail_count"] = failCount
+			templateContent["type"] = "points-of-presence (PoPs)"
 		}
 
 		postMessageRequest := &obj.SlackPostChatMessageRequest{}

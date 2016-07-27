@@ -1,4 +1,7 @@
 package pagerduty
+
+import "github.com/hoisie/mustache"
+
 var CheckFailing = `{
   "service_key": "{{service_key}}",
   "incident_key":"{{check_id}}",
@@ -8,3 +11,11 @@ var CheckFailing = `{
   "details":"{{{event_json}}}"
 }
 `
+
+func init() {
+	tmpl, err := mustache.ParseString(CheckFailing)
+	if err != nil {
+		panic(err)
+	}
+	Templates["check-failing"] = tmpl
+}
