@@ -450,16 +450,16 @@
 			"revisionTime": "2016-05-24T09:24:53-04:00"
 		},
 		{
-			"checksumSHA1": "y3C0LHuA1LB3cK6VsJtvt9krstQ=",
+			"checksumSHA1": "zw6plsiA9mRHkzLb0k50o2Isocs=",
 			"path": "github.com/opsee/notification-templates/dist/go/pagerduty",
-			"revision": "c8437d9331b5650db2f7835ea575a33b7ed2c259",
-			"revisionTime": "2016-05-03T17:08:31-04:00"
+			"revision": "1ca87d5b342ba36eed581ec1c877b50c806941be",
+			"revisionTime": "2016-07-27T21:07:06Z"
 		},
 		{
-			"checksumSHA1": "LnjFsETUGmSSoBIIPc/wy5SToEc=",
+			"checksumSHA1": "8qCzXMAeEwlkv1Z38+V0CGbsRB8=",
 			"path": "github.com/opsee/notification-templates/dist/go/slack",
-			"revision": "c8437d9331b5650db2f7835ea575a33b7ed2c259",
-			"revisionTime": "2016-05-03T17:08:31-04:00"
+			"revision": "1ca87d5b342ba36eed581ec1c877b50c806941be",
+			"revisionTime": "2016-07-27T21:07:06Z"
 		},
 		{
 			"checksumSHA1": "Oc5/hmIbwL/aWBo72SigCzA82JE=",
