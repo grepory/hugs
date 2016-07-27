@@ -1,13 +1,20 @@
 package notifier
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
+	"golang.org/x/net/context"
+
 	"github.com/hoisie/mustache"
 	"github.com/opsee/basic/schema"
+	opsee "github.com/opsee/basic/service"
 	"github.com/opsee/hugs/obj"
 	"github.com/opsee/hugs/store"
 	log "github.com/opsee/logrus"
@@ -15,7 +22,8 @@ import (
 )
 
 type SlackBotSender struct {
-	templates map[string]*mustache.Template
+	templates  map[string]*mustache.Template
+	catsClient opsee.CatsClient
 }
 
 // Send notification to customer.  At this point we have done basic validation on notification and event
@@ -63,6 +71,34 @@ func (this SlackBotSender) Send(n *obj.Notification, e *obj.Event) error {
 			templateContent["json_url"] = "?"
 		}
 
+		if result.Target.Type == "external_host" {
+			catsResponse, err := this.catsClient.GetCheckResults(context.Background(), &opsee.GetCheckResultsRequest{
+				CheckId:    result.CheckId,
+				CustomerId: result.CustomerId,
+			})
+			if err != nil {
+				return err
+			}
+			results := catsResponse.Results
+
+			var (
+				instanceCount = len(results)
+				failCount     int
+			)
+
+			for _, r := range results {
+				failCount += r.FailingCount()
+			}
+
+			// we have inconsistent results, so don't do anything
+			if !result.Passing && failCount == 0 {
+				return fmt.Errorf("Failing result, but fail count == 0")
+			}
+
+			templateContent["instance_count"] = instanceCount
+			templateContent["fail_count"] = failCount
+		}
+
 		postMessageRequest := &obj.SlackPostChatMessageRequest{}
 		log.Debug(string(slackTemplate.Render(templateContent)))
 		err = json.Unmarshal([]byte(slackTemplate.Render(templateContent)), postMessageRequest)
@@ -105,6 +141,7 @@ func (this SlackBotSender) getSlackToken(n *obj.Notification) (string, error) {
 }
 
 func NewSlackBotSender() (*SlackBotSender, error) {
+
 	// initialize check failing template
 	failTemplate, err := mustache.ParseString(slacktmpl.CheckFailing)
 	if err != nil {
@@ -122,7 +159,20 @@ func NewSlackBotSender() (*SlackBotSender, error) {
 		"check-passing": passTemplate,
 	}
 
+	catsConn, err := grpc.Dial(
+		"cats.in.opsee.com:443",
+		grpc.WithTransportCredentials(
+			credentials.NewTLS(&tls.Config{
+				InsecureSkipVerify: true,
+			}),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SlackBotSender{
-		templates: templateMap,
+		templates:  templateMap,
+		catsClient: opsee.NewCatsClient(catsConn),
 	}, nil
 }
